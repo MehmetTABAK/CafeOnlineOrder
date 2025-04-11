@@ -1,0 +1,378 @@
+﻿@{
+    ViewData["Title"] = "Ürünler";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+@using ProjectCafeEntities
+@model List<Product>
+
+@foreach (var categoryGroup in Model.GroupBy(p => p.MenuCategory?.CategoryName))
+{
+    <div class="menu-divider">
+        <span>@categoryGroup.Key</span>
+    </div>
+
+    @foreach (var subCategoryGroup in categoryGroup.GroupBy(p => p.SubMenuCategoryId != null ? p.SubMenuCategory?.SubCategoryName : p.MenuCategory?.CategoryName))
+    {
+        <div class="submenu-divider">
+            <span>@subCategoryGroup.Key</span>
+        </div>
+
+        <div class="row pt-4">
+            @foreach (var product in subCategoryGroup)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="blog-card">
+                        <a href="#">
+                            <img src="@product.Image" alt="@product.Name" class="img-fluid">
+                        </a>
+                        <div class="blog-content">
+                            <a href="#">
+                                <h3 class="mb-4 mt-2">
+                                    @product.Name
+                                </h3>
+                            </a>
+                            <div class="price-container">
+                                @if (product.IsThereDiscount)
+                                {
+                                    var discountRate = (product.Price * product.DiscountRate) / 100;
+                                    var lastPrice = (product.Price - discountRate);
+                                    <span class="original-price">@product.Price ₺</span>
+                                    <span class="discount-label">% @product.DiscountRate</span>
+                                    <span class="discount-price">@lastPrice ₺</span>
+                                }
+                                else
+                                {
+                                    <span class="discount-price">@product.Price ₺</span>
+                                }
+                            </div>
+                            <div class="d-flex justify-content-between gap-2 mt-3">
+                                <a href="#">
+                                    <button class="readmore-btn edit-product-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#productModal"
+                                            data-id="@product.Id"
+                                            data-name="@product.Name"
+                                            data-price="@product.Price"
+                                            data-image="@product.Image"
+                                            data-has-discount="@product.IsThereDiscount"
+                                            data-discount="@product.DiscountRate"
+                                            data-category="@categoryGroup.Key"
+                                            data-subcategory="@subCategoryGroup.Key">
+                                        <span class="book-wrapper">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="rgb(86, 69, 117)"
+                                                 viewBox="0 0 126 75"
+                                                 class="book">
+                                                <rect stroke-width="3"
+                                                      stroke="#fff"
+                                                      rx="7.5"
+                                                      height="70"
+                                                      width="121"
+                                                      y="2.5"
+                                                      x="2.5"></rect>
+                                                <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M25 20H50"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M101 20H76"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M16 30L50 30"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M110 30L76 30"></path>
+                                            </svg>
+
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 65 75"
+                                                 class="book-page">
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M40 20H15"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M49 30L15 30"></path>
+                                                <path stroke-width="3"
+                                                      stroke="#fff"
+                                                      d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
+                                            </svg>
+                                        </span>
+                                        <span class="text"> Ürünü Düzenle </span>
+                                    </button>
+                                </a>
+                                <label class="switch">
+                                    <span class="switch-text">Stok</span>
+                                    <input type="checkbox" class="stock-checkbox" data-id="@product.Id" @(product.Stock ? "checked" : "")>
+                                    <div class="slider">
+                                        <div class="circle">
+                                            <svg class="cross" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 365.696 365.696" y="0" x="0" height="6" width="6" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                            <g>
+                                            <path data-original="#000000" fill="currentColor" d="M243.188 182.86 356.32 69.726c12.5-12.5 12.5-32.766 0-45.247L341.238 9.398c-12.504-12.503-32.77-12.503-45.25 0L182.86 122.528 69.727 9.374c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.457c-12.5 12.504-12.5 32.77 0 45.25l113.152 113.152L9.398 295.99c-12.503 12.503-12.503 32.769 0 45.25L24.48 356.32c12.5 12.5 32.766 12.5 45.247 0l113.132-113.132L295.99 356.32c12.503 12.5 32.769 12.5 45.25 0l15.081-15.082c12.5-12.504 12.5-32.77 0-45.25zm0 0"></path>
+                                                                                                            </g>
+                                                                                                        </svg>
+                                            <svg class="checkmark" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 24 24" y="0" x="0" height="10" width="10" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                            <g>
+                                            <path class="" data-original="#000000" fill="currentColor" d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"></path>
+                                                                                                            </g>
+                                                                                                        </svg>
+                                        </div>
+                                    </div>
+                                </label>
+                                <a href="#">
+                                    <button class="noselect">
+                                        <span class="text">Ürünü Kaldır</span>
+                                        <span class="icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                                <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
+                                            </svg>
+                                        </span>
+                                    </button>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex justify-content-end mb-4">
+            <button class="addimg" data-category="@categoryGroup.Key" data-subcategory="@subCategoryGroup.Key" data-bs-toggle="modal" data-bs-target="#productModal">
+                <span class="addimg__text">Ürün Ekle</span>
+                <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+            </button>
+        </div>
+    }
+}
+
+<!-- Modal Başlangıcı -->
+<div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content rounded-4 shadow-lg">
+            <div class="modal-body">
+                <h3 class="text-muted">Ürün Resmi:</h3>
+                <label for="image-upload" class="upload-area">
+                    <span class="upload-icon">
+                        <svg xml:space="preserve" viewBox="0 0 184.69 184.69" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" id="Capa_1" version="1.1" width="60px" height="60px">
+                        <g>
+                        <path d="M149.968,50.186c-8.017-14.308-23.796-22.515-40.717-19.813C102.609,16.43,88.713,7.576,73.087,7.576c-22.117,0-40.112,17.994-40.112,40.115c0,0.913,0.036,1.854,0.118,2.834C14.004,54.875,0,72.11,0,91.959c0,23.456,19.082,42.535,42.538,42.535h33.623v-7.025H42.538c-19.583,0-35.509-15.929-35.509-35.509c0-17.526,13.084-32.621,30.442-35.105c0.931-0.132,1.768-0.633,2.326-1.392c0.555-0.755,0.795-1.704,0.644-2.63c-0.297-1.904-0.447-3.582-0.447-5.139c0-18.249,14.852-33.094,33.094-33.094c13.703,0,25.789,8.26,30.803,21.04c0.63,1.621,2.351,2.534,4.058,2.14c15.425-3.568,29.919,3.883,36.604,17.168c0.508,1.027,1.503,1.736,2.641,1.897c17.368,2.473,30.481,17.569,30.481,35.112c0,19.58-15.937,35.509-35.52,35.509H97.391v7.025h44.761c23.459,0,42.538-19.079,42.538-42.535C184.69,71.545,169.884,53.901,149.968,50.186z" style="fill:#010002;"></path>
+                            </g>
+                        </svg>
+                    </span>
+                    <p class="imgtext">Ürününüz için görülecek resmi seçiniz!</p>
+                    <img id="preview" alt="Ürün Resmi">
+                    <input class="input" type="file" id="image-upload" accept="image/*">
+                </label>
+
+                <h3 class="text-muted">Üst Menü:</h3>
+                <input type="text" id="menuCategory" class="form-control" readonly>
+
+                <h3 class="text-muted">Alt Menü:</h3>
+                <input type="text" id="subMenuCategory" class="form-control" readonly>
+
+                <h3 class="text-muted">Ürün İsmi:</h3>
+                <input type="text" placeholder="Buraya ürün ismini yazın..." class="form-control" required>
+
+                <h3 class="text-muted">Ürün Fiyatı:</h3>
+                <input type="text" placeholder="Buraya ürün fiyatını yazın..." class="form-control" required>
+
+                <h3 class="text-muted">Üründe İndirim Var Mı:</h3>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="discount" value="yes"> Evet
+                    </label>
+                    <label>
+                        <input type="radio" name="discount" value="no" checked> Hayır
+                    </label>
+                </div>
+
+                <h3 id="discount-label" class="discount-hidden text-muted">Üründe % Kaç İndirim Var:</h3>
+                <input type="text" id="discount-amount" placeholder="İndirim oranını girin..." class="blog-title discount-hidden">
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Kapat</button>
+                <button type="button" class="btn btn-primary rounded-pill">Kaydet</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Sonu -->
+<!-- Stok Durumu Değişiklik Onayı Modal'ı -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Stok Durumu Güncelleme</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmationMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" id="cancelButton" data-bs-dismiss="modal">Hayır</button>
+                <button type="button" class="btn btn-primary" id="confirmButton">Evet</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Modal açılırken formu ayarla
+    document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+        button.addEventListener('click', function () {
+            const modal = document.getElementById('productModal');
+            const category = this.getAttribute('data-category');
+            const subcategory = this.getAttribute('data-subcategory');
+
+            document.getElementById('menuCategory').value = category;
+            document.getElementById('subMenuCategory').value = subcategory;
+
+            const isEdit = this.classList.contains('edit-product-btn');
+            modal.setAttribute('data-mode', isEdit ? 'edit' : 'create');
+
+            if (isEdit) {
+                document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value = this.getAttribute('data-name');
+                document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value = this.getAttribute('data-price');
+                const image = this.getAttribute('data-image');
+                if (image) document.getElementById('preview').src = image;
+
+                const hasDiscount = this.getAttribute('data-has-discount') === "True";
+                const discount = this.getAttribute('data-discount');
+
+                if (hasDiscount) {
+                    document.querySelector('input[name="discount"][value="yes"]').checked = true;
+                    document.getElementById('discount-label').classList.remove("discount-hidden");
+                    document.getElementById('discount-amount').classList.remove("discount-hidden");
+                    document.getElementById('discount-amount').value = discount;
+                } else {
+                    document.querySelector('input[name="discount"][value="no"]').checked = true;
+                    document.getElementById('discount-label').classList.add("discount-hidden");
+                    document.getElementById('discount-amount').classList.add("discount-hidden");
+                    document.getElementById('discount-amount').value = "";
+                }
+
+                modal.setAttribute('data-id', this.getAttribute('data-id'));
+            } else {
+                document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value = "";
+                document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value = "";
+                document.getElementById('preview').src = "";
+                document.querySelector('input[name="discount"][value="no"]').checked = true;
+                document.getElementById('discount-label').classList.add("discount-hidden");
+                document.getElementById('discount-amount').classList.add("discount-hidden");
+                document.getElementById('discount-amount').value = "";
+                modal.removeAttribute('data-id');
+            }
+        });
+    });
+
+    // Kaydet butonu işlemi
+    document.querySelector('#productModal .btn-primary').addEventListener('click', () => {
+        const modal = document.getElementById('productModal');
+        const mode = modal.getAttribute('data-mode');
+        const id = modal.getAttribute('data-id');
+
+        const name = document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value;
+        const price = document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value;
+        const hasDiscount = document.querySelector('input[name="discount"]:checked').value === 'yes';
+        const discount = hasDiscount ? document.getElementById('discount-amount').value : 0;
+        const category = document.getElementById('menuCategory').value;
+        const subCategory = document.getElementById('subMenuCategory').value;
+        const imageSrc = document.getElementById('preview').src;
+
+        const payload = {
+            id: mode === 'edit' ? parseInt(id) : 0,
+            name,
+            price: parseFloat(price),
+            image: imageSrc,
+            isThereDiscount: hasDiscount,
+            discountRate: parseFloat(discount),
+            menuCategoryId: 1,
+            subMenuCategoryId: 1,
+            active: true,
+            stock: true,
+        };
+
+        console.log(category);
+        console.log(subCategory);
+        console.log(payload);
+        console.log(JSON.stringify(payload));
+
+        const endpoint = mode === 'edit' ? '/Data/UpdateProduct' : '/Data/AddProduct';
+
+        fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert(data.message || "İşlem başarısız.");
+            }
+        })
+        .catch(() => alert('Sunucu hatası oluştu.'));
+    });
+
+    // Stok durumunu güncelle
+    document.querySelectorAll('.stock-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const productId = this.getAttribute('data-id');
+            const isChecked = this.checked;
+            const confirmationMessage = isChecked
+                ? "Ürünü stoğa eklemek istediğinize emin misiniz?"
+                : "Ürünü stoktan kaldırmak istediğinize emin misiniz?";
+
+            const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+            document.getElementById('confirmationMessage').innerText = confirmationMessage;
+
+            const confirmButton = document.getElementById('confirmButton');
+            const cancelButton = document.getElementById('cancelButton');
+
+            const updateStockStatus = () => {
+                fetch('/Data/UpdateStock', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: parseInt(productId), stock: isChecked })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        checkbox.checked = isChecked;
+                        modal.hide();
+                    } else {
+                        alert('Stok durumu güncellenemedi.');
+                    }
+                })
+                .catch(error => alert('Bir hata oluştu.'));
+            };
+
+            confirmButton.removeEventListener('click', updateStockStatus);
+            confirmButton.addEventListener('click', updateStockStatus);
+
+            cancelButton.removeEventListener('click', () => {
+                checkbox.checked = !isChecked;
+                modal.hide();
+            });
+            cancelButton.addEventListener('click', () => {
+                checkbox.checked = !isChecked;
+                modal.hide();
+            });
+
+            modal.show();
+        });
+    });
+</script>
