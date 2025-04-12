@@ -18,7 +18,7 @@ namespace ProjectCafeEntities
 		public int? CorrectionUser { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 
-		public virtual MenuCategory MenuCategory { get; set; }
-		public virtual ICollection<Product> Products { get; set; }
+		public virtual MenuCategory? MenuCategory { get; set; }
+		public virtual ICollection<Product>? Products { get; set; }
 	}
 }

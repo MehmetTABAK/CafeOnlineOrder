@@ -58,7 +58,9 @@
                                             data-has-discount="@product.IsThereDiscount"
                                             data-discount="@product.DiscountRate"
                                             data-category="@categoryGroup.Key"
-                                            data-subcategory="@subCategoryGroup.Key">
+                                            data-subcategory="@subCategoryGroup.Key"
+                                            data-category-id="@product.MenuCategoryId"
+                                            data-subcategory-id="@product.SubMenuCategoryId">
                                         <span class="book-wrapper">
                                             <svg xmlns="http://www.w3.org/2000/svg"
                                                  fill="rgb(86, 69, 117)"
@@ -118,18 +120,18 @@
                                             <svg class="cross" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 365.696 365.696" y="0" x="0" height="6" width="6" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
                                             <g>
                                             <path data-original="#000000" fill="currentColor" d="M243.188 182.86 356.32 69.726c12.5-12.5 12.5-32.766 0-45.247L341.238 9.398c-12.504-12.503-32.77-12.503-45.25 0L182.86 122.528 69.727 9.374c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.457c-12.5 12.504-12.5 32.77 0 45.25l113.152 113.152L9.398 295.99c-12.503 12.503-12.503 32.769 0 45.25L24.48 356.32c12.5 12.5 32.766 12.5 45.247 0l113.132-113.132L295.99 356.32c12.503 12.5 32.769 12.5 45.25 0l15.081-15.082c12.5-12.504 12.5-32.77 0-45.25zm0 0"></path>
-                                                                                                            </g>
-                                                                                                        </svg>
+                                                                                                                        </g>
+                                                                                                                    </svg>
                                             <svg class="checkmark" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 24 24" y="0" x="0" height="10" width="10" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
                                             <g>
                                             <path class="" data-original="#000000" fill="currentColor" d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"></path>
-                                                                                                            </g>
-                                                                                                        </svg>
+                                                                                                                        </g>
+                                                                                                                    </svg>
                                         </div>
                                     </div>
                                 </label>
                                 <a href="#">
-                                    <button class="noselect">
+                                    <button class="noselect delete-product-btn" data-id="@product.Id">
                                         <span class="text">Ürünü Kaldır</span>
                                         <span class="icon">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -146,9 +148,15 @@
         </div>
 
         <div class="d-flex justify-content-end mb-4">
-            <button class="addimg" data-category="@categoryGroup.Key" data-subcategory="@subCategoryGroup.Key" data-bs-toggle="modal" data-bs-target="#productModal">
-                <span class="addimg__text">Ürün Ekle</span>
-                <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+            <button class="addimg"
+                data-category="@categoryGroup.Key"
+                data-subcategory="@subCategoryGroup.Key"
+                data-category-id="@subCategoryGroup.First().MenuCategoryId"
+                data-subcategory-id="@subCategoryGroup.First().SubMenuCategoryId"
+                data-bs-toggle="modal"
+                data-bs-target="#productModal">
+                    <span class="addimg__text">Ürün Ekle</span>
+                    <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
             </button>
         </div>
     }
@@ -207,7 +215,7 @@
 </div>
 <!-- Modal Sonu -->
 <!-- Stok Durumu Değişiklik Onayı Modal'ı -->
-<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+@* <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
@@ -223,7 +231,10 @@
             </div>
         </div>
     </div>
-</div>
+</div> *@
+
+<input type="hidden" id="menuCategoryId">
+<input type="hidden" id="subMenuCategoryId">
 
 <script>
     // Modal açılırken formu ayarla
@@ -232,9 +243,13 @@
             const modal = document.getElementById('productModal');
             const category = this.getAttribute('data-category');
             const subcategory = this.getAttribute('data-subcategory');
+            const categoryId = this.getAttribute('data-category-id');
+            const subCategoryId = this.getAttribute('data-subcategory-id');
 
             document.getElementById('menuCategory').value = category;
             document.getElementById('subMenuCategory').value = subcategory;
+            document.getElementById('menuCategoryId').value = categoryId;
+            document.getElementById('subMenuCategoryId').value = subCategoryId;
 
             const isEdit = this.classList.contains('edit-product-btn');
             modal.setAttribute('data-mode', isEdit ? 'edit' : 'create');
@@ -274,7 +289,7 @@
         });
     });
 
-    // Kaydet butonu işlemi
+    // Ürün kaydetme ve güncelleme işlemleri
     document.querySelector('#productModal .btn-primary').addEventListener('click', () => {
         const modal = document.getElementById('productModal');
         const mode = modal.getAttribute('data-mode');
@@ -284,9 +299,10 @@
         const price = document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value;
         const hasDiscount = document.querySelector('input[name="discount"]:checked').value === 'yes';
         const discount = hasDiscount ? document.getElementById('discount-amount').value : 0;
-        const category = document.getElementById('menuCategory').value;
-        const subCategory = document.getElementById('subMenuCategory').value;
         const imageSrc = document.getElementById('preview').src;
+
+        const menuCategoryId = parseInt(document.getElementById('menuCategoryId').value);
+        const subMenuCategoryId = parseInt(document.getElementById('subMenuCategoryId').value);
 
         const payload = {
             id: mode === 'edit' ? parseInt(id) : 0,
@@ -295,16 +311,11 @@
             image: imageSrc,
             isThereDiscount: hasDiscount,
             discountRate: parseFloat(discount),
-            menuCategoryId: 1,
-            subMenuCategoryId: 1,
+            menuCategoryId,
+            subMenuCategoryId,
             active: true,
             stock: true,
         };
-
-        console.log(category);
-        console.log(subCategory);
-        console.log(payload);
-        console.log(JSON.stringify(payload));
 
         const endpoint = mode === 'edit' ? '/Data/UpdateProduct' : '/Data/AddProduct';
 
@@ -326,6 +337,57 @@
     });
 
     // Stok durumunu güncelle
+    // document.querySelectorAll('.stock-checkbox').forEach(checkbox => {
+    //     checkbox.addEventListener('change', function () {
+    //         const productId = this.getAttribute('data-id');
+    //         const isChecked = this.checked;
+    //         const confirmationMessage = isChecked
+    //             ? "Ürünü stoğa eklemek istediğinize emin misiniz?"
+    //             : "Ürünü stoktan kaldırmak istediğinize emin misiniz?";
+
+    //         const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+    //         document.getElementById('confirmationMessage').innerText = confirmationMessage;
+
+    //         const confirmButton = document.getElementById('confirmButton');
+    //         const cancelButton = document.getElementById('cancelButton');
+
+    //         const updateStockStatus = () => {
+    //             fetch('/Data/UpdateStock', {
+    //                 method: 'POST',
+    //                 headers: {
+    //                     'Content-Type': 'application/json'
+    //                 },
+    //                 body: JSON.stringify({ id: parseInt(productId), stock: isChecked })
+    //             })
+    //             .then(response => response.json())
+    //             .then(data => {
+    //                 if (data.success) {
+    //                     checkbox.checked = isChecked;
+    //                     modal.hide();
+    //                 } else {
+    //                     alert('Stok durumu güncellenemedi.');
+    //                 }
+    //             })
+    //             .catch(error => alert('Bir hata oluştu.'));
+    //         };
+
+    //         confirmButton.removeEventListener('click', updateStockStatus);
+    //         confirmButton.addEventListener('click', updateStockStatus);
+
+    //         cancelButton.removeEventListener('click', () => {
+    //             checkbox.checked = !isChecked;
+    //             modal.hide();
+    //         });
+    //         cancelButton.addEventListener('click', () => {
+    //             checkbox.checked = !isChecked;
+    //             modal.hide();
+    //         });
+
+    //         modal.show();
+    //     });
+    // });
+
+    // Stok durumunu güncelle (modal kaldırıldı, onay sorusu eklendi)
     document.querySelectorAll('.stock-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function () {
             const productId = this.getAttribute('data-id');
@@ -334,45 +396,55 @@
                 ? "Ürünü stoğa eklemek istediğinize emin misiniz?"
                 : "Ürünü stoktan kaldırmak istediğinize emin misiniz?";
 
-            const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-            document.getElementById('confirmationMessage').innerText = confirmationMessage;
+            if (!confirm(confirmationMessage)) {
+                this.checked = !isChecked;
+                return;
+            }
 
-            const confirmButton = document.getElementById('confirmButton');
-            const cancelButton = document.getElementById('cancelButton');
-
-            const updateStockStatus = () => {
-                fetch('/Data/UpdateStock', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ id: parseInt(productId), stock: isChecked })
+            fetch('/Data/UpdateStock', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: parseInt(productId), stock: isChecked })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        alert('Stok durumu güncellenemedi.');
+                        checkbox.checked = !isChecked;
+                    }
                 })
+                .catch(() => {
+                    alert('Bir hata oluştu.');
+                    checkbox.checked = !isChecked;
+                });
+        });
+    });
+
+    // Ürün silme işlemi
+    document.querySelectorAll('.delete-product-btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const productId = this.getAttribute('data-id');
+            if (!confirm("Bu ürünü silmek istiyor musunuz?")) return;
+
+            fetch('/Data/DeleteProduct', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ id: parseInt(productId) })
+            })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        checkbox.checked = isChecked;
-                        modal.hide();
+                        alert(data.message);
+                        location.reload();
                     } else {
-                        alert('Stok durumu güncellenemedi.');
+                        alert(data.message || 'Silme işlemi başarısız oldu.');
                     }
                 })
-                .catch(error => alert('Bir hata oluştu.'));
-            };
-
-            confirmButton.removeEventListener('click', updateStockStatus);
-            confirmButton.addEventListener('click', updateStockStatus);
-
-            cancelButton.removeEventListener('click', () => {
-                checkbox.checked = !isChecked;
-                modal.hide();
-            });
-            cancelButton.addEventListener('click', () => {
-                checkbox.checked = !isChecked;
-                modal.hide();
-            });
-
-            modal.show();
+                .catch(() => alert('Sunucu hatası oluştu.'));
         });
     });
 </script>

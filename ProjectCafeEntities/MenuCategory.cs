@@ -19,7 +19,7 @@ namespace ProjectCafeEntities
 		public int? CorrectionUser { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 
-		public virtual Cafe Cafe { get; set; }
-		public virtual ICollection<SubMenuCategory> SubMenuCategories { get; set; }
+		public virtual Cafe? Cafe { get; set; }
+		public virtual ICollection<SubMenuCategory>? SubMenuCategories { get; set; }
 	}
 }

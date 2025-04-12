@@ -980,6 +980,7 @@ input[type="file"] {
     cursor: pointer;
     display: flex;
     align-items: center;
+    justify-content: space-between;
     border: 1px solid #34974d;
     background-color: #3aa856;
 }
@@ -989,9 +990,12 @@ input[type="file"] {
 }
 
     .addimg .addimg__text {
-        transform: translateX(30px);
         color: #fff;
         font-weight: 600;
+        z-index: 2;
+        transition: color 0.3s;
+        flex-grow: 1;
+        text-align: left;
     }
 
     .addimg .addimg__icon {
