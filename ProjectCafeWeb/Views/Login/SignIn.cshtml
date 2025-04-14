@@ -1,0 +1,48 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Giriş Yap - ProjectCafe</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #e0f7ff;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div class="loginContainer">
+        <div class="heading">Giriş Yap</div>
+        <form action="">
+            <input placeholder="E-mail"
+                   id="email"
+                   name="email"
+                   type="email"
+                   required="" />
+            <input placeholder="Şifre"
+                   id="password"
+                   name="password"
+                   type="password"
+                   required="" />
+            <span class="forgot-password"><a href="#">Şifrenizi mi unuttunuz?</a></span>
+            <input value="Giriş Yap" type="submit" class="login-button" />
+        </form>
+        <div class="social-account-container">
+            <span class="title">Giriş yapmak için bir hesabınız yok mu?</span>
+        </div>
+        <span class="agreement"><a href="#">Hemen Kayıt Olun!</a></span>
+    </div>
+</body>
+</html>

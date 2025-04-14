@@ -6,157 +6,173 @@
 @using ProjectCafeEntities
 @model List<Product>
 
-@foreach (var categoryGroup in Model.GroupBy(p => p.MenuCategory?.CategoryName))
+@{
+    var allCategories = ViewBag.AllMenuCategories as List<MenuCategory>;
+    var allSubCategories = ViewBag.AllSubMenuCategories as List<SubMenuCategory>;
+}
+
+@foreach (var category in allCategories)
 {
     <div class="menu-divider">
-        <span>@categoryGroup.Key</span>
+        <span>@category.CategoryName</span>
     </div>
 
-    @foreach (var subCategoryGroup in categoryGroup.GroupBy(p => p.SubMenuCategoryId != null ? p.SubMenuCategory?.SubCategoryName : p.MenuCategory?.CategoryName))
+    var subCategoriesInThisCategory = allSubCategories.Where(s => s.MenuCategoryId == category.Id).ToList();
+
+    foreach (var subCategory in subCategoriesInThisCategory)
     {
+        var subCategoryProducts = Model.Where(p => p.SubMenuCategoryId == subCategory.Id).ToList();
+
         <div class="submenu-divider">
-            <span>@subCategoryGroup.Key</span>
+            <span>@subCategory.SubCategoryName</span>
         </div>
 
         <div class="row pt-4">
-            @foreach (var product in subCategoryGroup)
+            @if (subCategoryProducts.Any())
             {
-                <div class="col-md-4 mb-4">
-                    <div class="blog-card">
-                        <a href="#">
-                            <img src="@product.Image" alt="@product.Name" class="img-fluid">
-                        </a>
-                        <div class="blog-content">
+                foreach (var product in subCategoryProducts)
+                {
+                    <div class="col-md-4 mb-4">
+                        <div class="blog-card">
                             <a href="#">
-                                <h3 class="mb-4 mt-2">
-                                    @product.Name
-                                </h3>
+                                <img src="@product.Image" alt="@product.Name" class="img-fluid">
                             </a>
-                            <div class="price-container">
-                                @if (product.IsThereDiscount)
-                                {
-                                    var discountRate = (product.Price * product.DiscountRate) / 100;
-                                    var lastPrice = (product.Price - discountRate);
-                                    <span class="original-price">@product.Price ₺</span>
-                                    <span class="discount-label">% @product.DiscountRate</span>
-                                    <span class="discount-price">@lastPrice ₺</span>
-                                }
-                                else
-                                {
-                                    <span class="discount-price">@product.Price ₺</span>
-                                }
-                            </div>
-                            <div class="d-flex justify-content-between gap-2 mt-3">
+                            <div class="blog-content">
                                 <a href="#">
-                                    <button class="readmore-btn edit-product-btn"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#productModal"
-                                            data-id="@product.Id"
-                                            data-name="@product.Name"
-                                            data-price="@product.Price"
-                                            data-image="@product.Image"
-                                            data-has-discount="@product.IsThereDiscount"
-                                            data-discount="@product.DiscountRate"
-                                            data-category="@categoryGroup.Key"
-                                            data-subcategory="@subCategoryGroup.Key"
-                                            data-category-id="@product.MenuCategoryId"
-                                            data-subcategory-id="@product.SubMenuCategoryId">
-                                        <span class="book-wrapper">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="rgb(86, 69, 117)"
-                                                 viewBox="0 0 126 75"
-                                                 class="book">
-                                                <rect stroke-width="3"
-                                                      stroke="#fff"
-                                                      rx="7.5"
-                                                      height="70"
-                                                      width="121"
-                                                      y="2.5"
-                                                      x="2.5"></rect>
-                                                <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M25 20H50"></path>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M101 20H76"></path>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M16 30L50 30"></path>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M110 30L76 30"></path>
-                                            </svg>
+                                    <h3 class="mb-4 mt-2">
+                                        @product.Name
+                                    </h3>
+                                </a>
+                                <div class="price-container">
+                                    @if (product.IsThereDiscount)
+                                    {
+                                        var discountRate = (product.Price * product.DiscountRate) / 100;
+                                        var lastPrice = (product.Price - discountRate);
+                                        <span class="original-price">@product.Price ₺</span>
+                                        <span class="discount-label">% @product.DiscountRate</span>
+                                        <span class="discount-price">@lastPrice ₺</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="discount-price">@product.Price ₺</span>
+                                    }
+                                </div>
+                                <div class="d-flex justify-content-between gap-2 mt-3">
+                                    <a href="#">
+                                        <button class="readmore-btn edit-product-btn"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#productModal"
+                                                data-id="@product.Id"
+                                                data-name="@product.Name"
+                                                data-price="@product.Price"
+                                                data-image="@product.Image"
+                                                data-has-discount="@product.IsThereDiscount"
+                                                data-discount="@product.DiscountRate"
+                                                data-category="@category.CategoryName"
+                                                data-subcategory="@subCategory.SubCategoryName"
+                                                data-category-id="@product.MenuCategoryId"
+                                                data-subcategory-id="@product.SubMenuCategoryId">
+                                            <span class="book-wrapper">
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     fill="rgb(86, 69, 117)"
+                                                     viewBox="0 0 126 75"
+                                                     class="book">
+                                                    <rect stroke-width="3"
+                                                          stroke="#fff"
+                                                          rx="7.5"
+                                                          height="70"
+                                                          width="121"
+                                                          y="2.5"
+                                                          x="2.5"></rect>
+                                                    <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
+                                                    <path stroke-linecap="round"
+                                                          stroke-width="4"
+                                                          stroke="#fff"
+                                                          d="M25 20H50"></path>
+                                                    <path stroke-linecap="round"
+                                                          stroke-width="4"
+                                                          stroke="#fff"
+                                                          d="M101 20H76"></path>
+                                                    <path stroke-linecap="round"
+                                                          stroke-width="4"
+                                                          stroke="#fff"
+                                                          d="M16 30L50 30"></path>
+                                                    <path stroke-linecap="round"
+                                                          stroke-width="4"
+                                                          stroke="#fff"
+                                                          d="M110 30L76 30"></path>
+                                                </svg>
 
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="none"
-                                                 viewBox="0 0 65 75"
-                                                 class="book-page">
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M40 20H15"></path>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M49 30L15 30"></path>
-                                                <path stroke-width="3"
-                                                      stroke="#fff"
-                                                      d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
-                                            </svg>
-                                        </span>
-                                        <span class="text"> Ürünü Düzenle </span>
-                                    </button>
-                                </a>
-                                <label class="switch">
-                                    <span class="switch-text">Stok</span>
-                                    <input type="checkbox" class="stock-checkbox" data-id="@product.Id" @(product.Stock ? "checked" : "")>
-                                    <div class="slider">
-                                        <div class="circle">
-                                            <svg class="cross" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 365.696 365.696" y="0" x="0" height="6" width="6" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                                            <g>
-                                            <path data-original="#000000" fill="currentColor" d="M243.188 182.86 356.32 69.726c12.5-12.5 12.5-32.766 0-45.247L341.238 9.398c-12.504-12.503-32.77-12.503-45.25 0L182.86 122.528 69.727 9.374c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.457c-12.5 12.504-12.5 32.77 0 45.25l113.152 113.152L9.398 295.99c-12.503 12.503-12.503 32.769 0 45.25L24.48 356.32c12.5 12.5 32.766 12.5 45.247 0l113.132-113.132L295.99 356.32c12.503 12.5 32.769 12.5 45.25 0l15.081-15.082c12.5-12.504 12.5-32.77 0-45.25zm0 0"></path>
-                                                                                                                        </g>
-                                                                                                                    </svg>
-                                            <svg class="checkmark" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 24 24" y="0" x="0" height="10" width="10" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
-                                            <g>
-                                            <path class="" data-original="#000000" fill="currentColor" d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"></path>
-                                                                                                                        </g>
-                                                                                                                    </svg>
+                                                <svg xmlns="http://www.w3.org/2000/svg"
+                                                     fill="none"
+                                                     viewBox="0 0 65 75"
+                                                     class="book-page">
+                                                    <path stroke-linecap="round"
+                                                          stroke-width="4"
+                                                          stroke="#fff"
+                                                          d="M40 20H15"></path>
+                                                    <path stroke-linecap="round"
+                                                          stroke-width="4"
+                                                          stroke="#fff"
+                                                          d="M49 30L15 30"></path>
+                                                    <path stroke-width="3"
+                                                          stroke="#fff"
+                                                          d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
+                                                </svg>
+                                            </span>
+                                            <span class="text"> Ürünü Düzenle </span>
+                                        </button>
+                                    </a>
+                                    <label class="switch">
+                                        <span class="switch-text">Stok</span>
+                                        <input type="checkbox" class="stock-checkbox" data-id="@product.Id" @(product.Stock ? "checked" : "")>
+                                        <div class="slider">
+                                            <div class="circle">
+                                                <svg class="cross" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 365.696 365.696" y="0" x="0" height="6" width="6" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                                <g>
+                                                <path data-original="#000000" fill="currentColor" d="M243.188 182.86 356.32 69.726c12.5-12.5 12.5-32.766 0-45.247L341.238 9.398c-12.504-12.503-32.77-12.503-45.25 0L182.86 122.528 69.727 9.374c-12.5-12.5-32.766-12.5-45.247 0L9.375 24.457c-12.5 12.504-12.5 32.77 0 45.25l113.152 113.152L9.398 295.99c-12.503 12.503-12.503 32.769 0 45.25L24.48 356.32c12.5 12.5 32.766 12.5 45.247 0l113.132-113.132L295.99 356.32c12.503 12.5 32.769 12.5 45.25 0l15.081-15.082c12.5-12.504 12.5-32.77 0-45.25zm0 0"></path>
+                                                                                                                                                    </g>
+                                                                                                                                                </svg>
+                                                <svg class="checkmark" xml:space="preserve" style="enable-background:new 0 0 512 512" viewBox="0 0 24 24" y="0" x="0" height="10" width="10" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" xmlns="http://www.w3.org/2000/svg">
+                                                <g>
+                                                <path class="" data-original="#000000" fill="currentColor" d="M9.707 19.121a.997.997 0 0 1-1.414 0l-5.646-5.647a1.5 1.5 0 0 1 0-2.121l.707-.707a1.5 1.5 0 0 1 2.121 0L9 14.171l9.525-9.525a1.5 1.5 0 0 1 2.121 0l.707.707a1.5 1.5 0 0 1 0 2.121z"></path>
+                                                                                                                                                    </g>
+                                                                                                                                                </svg>
+                                            </div>
                                         </div>
-                                    </div>
-                                </label>
-                                <a href="#">
-                                    <button class="noselect delete-product-btn" data-id="@product.Id">
-                                        <span class="text">Ürünü Kaldır</span>
-                                        <span class="icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                                <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
-                                            </svg>
-                                        </span>
-                                    </button>
-                                </a>
+                                    </label>
+                                    <a href="#">
+                                        <button class="noselect delete-product-btn" data-id="@product.Id">
+                                            <span class="text">Ürünü Kaldır</span>
+                                            <span class="icon">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                                    <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
+                                                </svg>
+                                            </span>
+                                        </button>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+                }
+            }
+            else
+            {
+                <div class="col-12 mb-4 text-muted">Bu alt kategoride henüz ürün yok.</div>
             }
         </div>
 
         <div class="d-flex justify-content-end mb-4">
             <button class="addimg"
-                data-category="@categoryGroup.Key"
-                data-subcategory="@subCategoryGroup.Key"
-                data-category-id="@subCategoryGroup.First().MenuCategoryId"
-                data-subcategory-id="@subCategoryGroup.First().SubMenuCategoryId"
-                data-bs-toggle="modal"
-                data-bs-target="#productModal">
-                    <span class="addimg__text">Ürün Ekle</span>
-                    <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+                    data-category="@category.CategoryName"
+                    data-subcategory="@subCategory.SubCategoryName"
+                    data-category-id="@category.Id"
+                    data-subcategory-id="@subCategory.Id"
+                    data-bs-toggle="modal"
+                    data-bs-target="#productModal">
+                <span class="addimg__text">Ürün Ekle</span>
+                <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
             </button>
         </div>
     }

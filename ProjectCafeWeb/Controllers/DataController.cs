@@ -85,6 +85,11 @@ namespace ProjectCafeWeb.Controllers
 				.Include(p => p.MenuCategory)
 				.Where(p => p.Active)
 				.ToList();
+
+			ViewBag.AllMenuCategories = _dbContext.MenuCategory
+				.Where(mc => mc.Active)
+				.ToList();
+
 			return View(subMenuCategories);
 		}
 
@@ -149,6 +154,16 @@ namespace ProjectCafeWeb.Controllers
 				.Include(p => p.MenuCategory)
 				.Where(p => p.Active)
 				.ToList();
+
+			ViewBag.AllMenuCategories = _dbContext.MenuCategory
+				.Where(mc => mc.Active)
+				.ToList();
+
+			ViewBag.AllSubMenuCategories = _dbContext.SubMenuCategory
+				.Include(sc => sc.MenuCategory)
+				.Where(sc => sc.Active)
+				.ToList();
+
 			return View(products);
 		}
 

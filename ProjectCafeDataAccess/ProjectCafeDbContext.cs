@@ -13,12 +13,14 @@ namespace ProjectCafeDataAccess
 	{
 		public virtual DbSet<Admin> Admin { get; set; }
 		public virtual DbSet<Cafe> Cafe { get; set; }
+		public virtual DbSet<Worker> Worker { get; set; }
+		public virtual DbSet<Section> Section { get; set; }
+		public virtual DbSet<Table> Table { get; set; }
 		public virtual DbSet<MenuCategory> MenuCategory { get; set; }
+		public virtual DbSet<SubMenuCategory> SubMenuCategory { get; set; }
+		public virtual DbSet<Product> Product { get; set; }
 		public virtual DbSet<Order> Order { get; set; }
 		public virtual DbSet<Payment> Payment { get; set; }
-		public virtual DbSet<Product> Product { get; set; }
-		public virtual DbSet<SubMenuCategory> SubMenuCategory { get; set; }
-		public virtual DbSet<Worker> Worker { get; set; }
 
 		public ProjectCafeDbContext(DbContextOptions<ProjectCafeDbContext> options) : base(options)
 		{

@@ -6,37 +6,45 @@
 @using ProjectCafeEntities
 @model List<SubMenuCategory>
 
-@foreach (var categoryGroup in Model.GroupBy(p => p.MenuCategory?.CategoryName))
+@{
+    var allCategories = ViewBag.AllMenuCategories as List<MenuCategory>;
+    var allSubCategories = Model;
+}
+
+@foreach (var category in allCategories)
 {
     <div class="menu-divider">
-        <span>@categoryGroup.Key</span>
+        <span>@category.CategoryName</span>
     </div>
 
+    var subCategoriesInThisCategory = allSubCategories.Where(s => s.MenuCategoryId == category.Id).ToList();
+
     <div class="row pt-4">
-        @foreach (var category in categoryGroup)
+        @if (subCategoriesInThisCategory.Any())
         {
-            <div class="col-md-4 mb-4">
-                <div class="blog-card">
+            foreach (var subCategory in subCategoriesInThisCategory)
+            {
+                <div class="col-md-4 mb-4">
+                    <div class="blog-card">
                     <a href="#">
-                        <img src="@category.SubCategoryImage" alt="@category.SubCategoryName" class="img-fluid">
+                            <img src="@subCategory.SubCategoryImage" alt="@subCategory.SubCategoryName" class="img-fluid">
                     </a>
                     <div class="blog-content">
                         <a href="#">
                             <h3 class="mb-4 mt-2">
-                                @category.SubCategoryName
+                                    @subCategory.SubCategoryName
                             </h3>
                         </a>
                         <div class="d-flex justify-content-between gap-2 mt-3">
                             <a href="#">
                                 <button class="readmore-btn edit-subcategory-btn"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#subCategoryModal"
-                                        data-id="@category.Id"
-                                        data-name="@category.SubCategoryName"
-                                        data-image="@category.SubCategoryImage"
-                                        data-category="@categoryGroup.Key"
-                                        data-category-id="@category.MenuCategoryId"
-                                    >
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#subCategoryModal"
+                                            data-id="@subCategory.Id"
+                                            data-name="@subCategory.SubCategoryName"
+                                            data-image="@subCategory.SubCategoryImage"
+                                            data-category="@category.CategoryName"
+                                            data-category-id="@subCategory.MenuCategoryId">
                                     <span class="book-wrapper">
                                         <svg xmlns="http://www.w3.org/2000/svg"
                                              fill="rgb(86, 69, 117)"
@@ -89,7 +97,7 @@
                                 </button>
                             </a>
                             <a href="#">
-                                <button class="noselect delete-subcategory-btn" data-id="@category.Id">
+                                <button class="noselect delete-subcategory-btn" data-id="@subCategory.Id">
                                     <span class="text">Alt Menüyü Kaldır</span>
                                     <span class="icon">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
@@ -102,13 +110,18 @@
                     </div>
                 </div>
             </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 mb-4 text-muted">Bu kategoriye ait alt menü bulunmamaktadır.</div>
         }
     </div>
 
     <div class="d-flex justify-content-end mb-4">
         <button class="addimg"
-                data-category="@categoryGroup.Key"
-                data-category-id="@categoryGroup.First().MenuCategoryId"
+                data-category="@category.CategoryName"
+                data-category-id="@category.Id"
                 data-bs-toggle="modal"
                 data-bs-target="#subCategoryModal">
             <span class="addimg__text">Alt Menü Ekle</span>

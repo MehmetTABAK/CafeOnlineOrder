@@ -10,7 +10,7 @@ namespace ProjectCafeEntities
 	{
 		public int Id { get; set; }
 		public int ProductId { get; set; }
-		public int TableNumber { get; set; }
+		public int TableId { get; set; }
 		public short Status { get; set; }
 		public bool Active { get; set; }
 		public DateTime RegistrationDate { get; set; }
@@ -18,5 +18,6 @@ namespace ProjectCafeEntities
 		public DateTime? CorrectionDate { get; set; }
 
 		public virtual Product Product { get; set; }
+		public virtual Table Table { get; set; }
 	}
 }
