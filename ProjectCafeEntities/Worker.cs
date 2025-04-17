@@ -10,6 +10,9 @@ namespace ProjectCafeEntities
 	{
 		public int Id { get; set; }
 		public int CafeId { get; set; }
+		public string Firstname { get; set; }
+		public string Lastname { get; set; }
+		public string? Image { get; set; }
 		public string Email { get; set; }
 		public string Password { get; set; }
 		public bool Active { get; set; }
@@ -18,6 +21,6 @@ namespace ProjectCafeEntities
 		public int? CorrectionUser { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 
-		public virtual Cafe Cafe { get; set; }
+		public virtual Cafe? Cafe { get; set; }
 	}
 }

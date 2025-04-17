@@ -11,7 +11,7 @@ namespace ProjectCafeEntities
 		public int Id { get; set; }
 		public int AdminId { get; set; }
 		public string Name { get; set; }
-		public int NumberOfTables { get; set; }
+		public string? Image { get; set; }
 		public string Location { get; set; }
 		public bool Active { get; set; }
 		public int RegistrationUser { get; set; }
@@ -19,8 +19,9 @@ namespace ProjectCafeEntities
 		public int? CorrectionUser { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 
-		public virtual Admin Admin { get; set; }
-		public virtual ICollection<MenuCategory> MenuCategories { get; set; }
-		public virtual ICollection<Worker> Workers { get; set; }
+		public virtual Admin? Admin { get; set; }
+		public virtual ICollection<MenuCategory>? MenuCategories { get; set; }
+		public virtual ICollection<Worker>? Workers { get; set; }
+		public virtual ICollection<Section>? Sections { get; set; }
 	}
 }

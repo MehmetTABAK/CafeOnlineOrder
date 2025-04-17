@@ -1,7 +1,6 @@
 ﻿@{
     Layout = null;
 }
-
 <!DOCTYPE html>
 
 <html>
@@ -24,8 +23,21 @@
 </head>
 <body>
     <div class="loginContainer">
+        @if (ViewBag.LoginError != null)
+        {
+            <div class="alert-box alert-error">@ViewBag.LoginError</div>
+        }
+        @* @if (ViewBag.RegisterError != null)
+        {
+            <div class="alert-box alert-warning">@ViewBag.RegisterError</div>
+        }
+        @if (ViewBag.RegisterSuccess != null)
+        {
+            <div class="alert-box alert-success">@ViewBag.RegisterSuccess</div>
+        } *@
+
         <div class="heading">Giriş Yap</div>
-        <form action="">
+        <form asp-action="SignIn" method="post">
             <input placeholder="E-mail"
                    id="email"
                    name="email"
@@ -39,10 +51,65 @@
             <span class="forgot-password"><a href="#">Şifrenizi mi unuttunuz?</a></span>
             <input value="Giriş Yap" type="submit" class="login-button" />
         </form>
-        <div class="social-account-container">
+        @* <div class="social-account-container">
             <span class="title">Giriş yapmak için bir hesabınız yok mu?</span>
         </div>
-        <span class="agreement"><a href="#">Hemen Kayıt Olun!</a></span>
+        <span class="agreement"><a href="#" id="openRegisterModal">Hemen Kayıt Olun!</a></span> *@
     </div>
+
+    @* <!-- Modal -->
+    <div id="registerModal" class="modal">
+        <div class="loginContainer">
+            <div class="heading">Kayıt Ol</div>
+            <form asp-action="Register" method="post">
+                <input placeholder="İsim"
+                       id="firstname"
+                       name="firstname"
+                       type="text"
+                       required="" />
+                <input placeholder="Soyisim"
+                       id="lastname"
+                       name="lastname"
+                       type="text"
+                       required="" />
+                <input placeholder="E-mail"
+                       id="email"
+                       name="email"
+                       type="email"
+                       required="" />
+                <input placeholder="Şifre"
+                       id="password"
+                       name="password"
+                       type="password"
+                       required="" />
+                <input placeholder="Şifreyi Onayla"
+                       id="passwordConfirm"
+                       name="passwordConfirm"
+                       type="password"
+                       required="" />
+                <input value="Kayıt Ol" type="submit" class="login-button" />
+                <div class="social-account-container">
+                    <span class="title">Zaten bir hesabınız var mı?</span>
+                </div>
+                <span class="agreement"><a href="@Url.Action("SignIn", "Login")">Giriş Yap!</a></span>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const openBtn = document.getElementById("openRegisterModal");
+        const modal = document.getElementById("registerModal");
+
+        openBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            modal.style.display = "flex";
+        });
+
+        window.addEventListener("click", (e) => {
+            if (e.target === modal) {
+                modal.style.display = "none";
+            }
+        });
+    </script> *@
 </body>
 </html>

@@ -177,9 +177,14 @@ body {
 
         .user-menu li a {
             text-decoration: none;
-            color: #333;
-            font-size: 14px;
-            display: block;
+                color: #333;
+                font-size: 18px;
+                padding: 15px 15px;
+                display: flex;
+                align-items: center;
+                border-radius: 4px;
+                transition: all 0.3s;
+                position: relative;
         }
 
             .user-menu li a:hover {
@@ -195,6 +200,23 @@ body {
     justify-content: center;
     border-radius: 5px
 }
+
+    .input a {
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        border-radius: 4px;
+        transition: all 0.3s;
+        position: relative;
+    }
+
+        .input a:hover {
+            background-color: inherit;
+            color: white;
+            transform: none;
+            box-shadow: none;
+            text-decoration: none;
+        }
 
 .value {
     background-color: transparent;
@@ -826,6 +848,7 @@ input[type="file"] {
     .cta:active {
         transform: scale(0.95);
     }
+
 .switch {
     /* switch */
     --switch-width: 46px;
@@ -1765,3 +1788,43 @@ input.form-control {
         color: #0099ff;
         font-size: 12px;
     }
+
+.alert-box {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    font-size: 14px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.alert-error {
+    background-color: #ffe5e5;
+    color: #d60000;
+    border: 1px solid #ffb3b3;
+}
+
+.alert-warning {
+    background-color: #fff8e1;
+    color: #e09100;
+    border: 1px solid #ffe082;
+}
+
+.alert-success {
+    background-color: #e0f8ec;
+    color: #0c7c3c;
+    border: 1px solid #a5d6a7;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

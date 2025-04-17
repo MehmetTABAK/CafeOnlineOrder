@@ -10,6 +10,14 @@ builder.Services.AddControllersWithViews().AddRazorRuntimeCompilation();
 builder.Services.AddDbContext<ProjectCafeDbContext>(options =>
 	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddAuthentication("cookieAuth")
+	.AddCookie("cookieAuth", options =>
+	{
+		options.LoginPath = "/Login/SignIn"; // yetkisiz kullanýcý buraya yönlendirilir
+	});
+
+builder.Services.AddAuthorization();
+builder.Services.AddSession();
 
 var app = builder.Build();
 
@@ -20,6 +28,9 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+
+app.UseAuthentication();
+app.UseSession();
 
 app.UseHttpsRedirection();
 app.UseRouting();
