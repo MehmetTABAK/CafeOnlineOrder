@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectCafeDataAccess;
 using ProjectCafeEntities;
+using ProjectCafeWeb.Attributes;
 using System.Text.Json;
 
 namespace ProjectCafeWeb.Controllers
@@ -59,6 +60,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Admin güncellenemedi!" });
 		}
 
+		[AuthorizeWithPermission("ViewWorker")]
 		public IActionResult WorkerProfile()
 		{
 			var adminId = GetCurrentAdminId();
@@ -72,6 +74,7 @@ namespace ProjectCafeWeb.Controllers
 			return View(workers);
 		}
 
+		[AuthorizeWithPermission("AddWorker")]
 		[HttpPost]
 		public async Task<IActionResult> AddWorker([FromBody] Worker worker)
 		{
@@ -92,7 +95,10 @@ namespace ProjectCafeWeb.Controllers
 				worker.CafeId = cafeId;
 				worker.RegistrationUser = adminId.Value;
 				worker.RegistrationDate = DateTime.Now;
-				// Ürünü veritabanına kaydet
+
+				if (worker.RolePermissions == null)
+					worker.RolePermissions = "[]";
+
 				_dbContext.Worker.Add(worker);
 				await _dbContext.SaveChangesAsync();
 				return Json(new { success = true, message = "Çalışan başarıyla eklendi!" });
@@ -101,6 +107,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Çalışan eklenemedi!" });
 		}
 
+		[AuthorizeWithPermission("UpdateWorker")]
 		[HttpPost]
 		public async Task<IActionResult> UpdateWorker([FromBody] Worker worker)
 		{
@@ -122,6 +129,7 @@ namespace ProjectCafeWeb.Controllers
 				existing.Image = worker.Image;
 				existing.Email = worker.Email;
 				existing.Password = worker.Password;
+				existing.RolePermissions = worker.RolePermissions ?? "[]";
 				existing.CorrectionUser = adminId.Value;
 				existing.CorrectionDate = DateTime.Now;
 
@@ -131,6 +139,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Çalışan güncellenemedi!" });
 		}
 
+		[AuthorizeWithPermission("DeleteWorker")]
 		[HttpPost]
 		public IActionResult DeleteWorker([FromBody] JsonElement request)
 		{
@@ -155,6 +164,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = true, message = "Çalışan silindi!" });
 		}
 
+		[AuthorizeWithPermission("CafeProfile")]
 		public IActionResult CafeProfile()
 		{
 			var adminId = GetCurrentAdminId();
@@ -170,6 +180,7 @@ namespace ProjectCafeWeb.Controllers
 			return View(cafes);
 		}
 
+		[AuthorizeWithPermission("UpdateCafe")]
 		[HttpPost]
 		public async Task<IActionResult> UpdateCafe([FromBody] Cafe cafe)
 		{
@@ -197,6 +208,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Kafe bilgileri güncellenemedi!" });
 		}
 
+		[AuthorizeWithPermission("AddSection")]
 		[HttpPost]
 		public async Task<IActionResult> AddSection([FromBody] Section section)
 		{
@@ -204,20 +216,29 @@ namespace ProjectCafeWeb.Controllers
 			if (adminId == null)
 				return Unauthorized();
 
-			var cafe = await _dbContext.Cafe.FirstOrDefaultAsync(c => c.Id == section.CafeId && c.AdminId == adminId);
-			if (cafe == null)
-				return Json(new { success = false, message = "Yetkiniz olmayan bir kafeye bölüm ekleyemezsiniz." });
+			var cafeId = _dbContext.Cafe
+				.Where(c => c.AdminId == adminId)
+				.Select(c => c.Id)
+				.FirstOrDefault();
 
-			section.RegistrationUser = adminId.Value;
-			section.RegistrationDate = DateTime.Now;
-			section.Active = true;
+			if (cafeId == 0)
+				return Json(new { success = false, message = "Bölüm bulunamadı!" });
 
-			_dbContext.Section.Add(section);
-			await _dbContext.SaveChangesAsync();
+			if (ModelState.IsValid)
+			{
+				section.CafeId = cafeId;
+				section.RegistrationUser = adminId.Value;
+				section.RegistrationDate = DateTime.Now;
+				section.Active = true;
 
-			return Json(new { success = true, message = "Bölüm başarıyla eklendi!" });
+				_dbContext.Section.Add(section);
+				await _dbContext.SaveChangesAsync();
+				return Json(new { success = true, message = "Bölüm başarıyla eklendi!" });
+			}
+			return Json(new { success = false, message = "Bölüm eklenemedi!" });
 		}
 
+		[AuthorizeWithPermission("UpdateSection")]
 		[HttpPost]
 		public async Task<IActionResult> UpdateSection([FromBody] Section section)
 		{
@@ -245,6 +266,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Bölüm güncellenemedi!" });
 		}
 
+		[AuthorizeWithPermission("DeleteSection")]
 		[HttpPost]
 		public IActionResult DeleteSection([FromBody] JsonElement request)
 		{
@@ -252,11 +274,12 @@ namespace ProjectCafeWeb.Controllers
 			if (adminId == null)
 				return Unauthorized();
 
-			int id = request.GetProperty("id").GetInt32();
+			int sectionId = request.GetProperty("id").GetInt32();
 
 			var section = _dbContext.Section
 				.Include(s => s.Cafe)
-				.FirstOrDefault(s => s.Id == id && s.Cafe.AdminId == adminId);
+				.Include(sc => sc.Tables)
+				.FirstOrDefault(s => s.Id == sectionId && s.Cafe.AdminId == adminId);
 
 			if (section == null)
 				return Json(new { success = false, message = "Bölüm bulunamadı veya yetkiniz yok." });
@@ -265,11 +288,19 @@ namespace ProjectCafeWeb.Controllers
 			section.CorrectionUser = adminId.Value;
 			section.CorrectionDate = DateTime.Now;
 
+			foreach (var table in section.Tables ?? new List<Table>())
+			{
+				table.Active = false;
+				table.CorrectionUser = adminId.Value;
+				table.CorrectionDate = DateTime.Now;
+			}
+
 			_dbContext.SaveChanges();
 
-			return Json(new { success = true, message = "Bölüm silindi!" });
+			return Json(new { success = true, message = "Bölüm ve bölüme ait masalar silindi!" });
 		}
 
+		[AuthorizeWithPermission("AddTable")]
 		[HttpPost]
 		public async Task<IActionResult> AddTable([FromBody] Table table)
 		{
@@ -284,16 +315,21 @@ namespace ProjectCafeWeb.Controllers
 			if (section == null)
 				return Json(new { success = false, message = "Yetkiniz olmayan bir bölüme masa ekleyemezsiniz." });
 
-			table.RegistrationUser = adminId.Value;
-			table.RegistrationDate = DateTime.Now;
-			table.Active = true;
+			if (ModelState.IsValid)
+			{
+				table.RegistrationUser = adminId.Value;
+				table.RegistrationDate = DateTime.Now;
+				table.Active = true;
 
-			_dbContext.Table.Add(table);
-			await _dbContext.SaveChangesAsync();
+				_dbContext.Table.Add(table);
+				await _dbContext.SaveChangesAsync();
+				return Json(new { success = true, message = "Masa başarıyla eklendi!" });
+			}
 
-			return Json(new { success = true, message = "Masa başarıyla eklendi!" });
+			return Json(new { success = false, message = "Masa eklenemedi!" });
 		}
 
+		[AuthorizeWithPermission("UpdateTable")]
 		[HttpPost]
 		public async Task<IActionResult> UpdateTable([FromBody] Table table)
 		{
@@ -309,15 +345,19 @@ namespace ProjectCafeWeb.Controllers
 			if (existing == null)
 				return Json(new { success = false, message = "Masa bulunamadı veya yetkiniz yok." });
 
-			existing.Name = table.Name;
-			existing.CorrectionUser = adminId.Value;
-			existing.CorrectionDate = DateTime.Now;
+			if (ModelState.IsValid)
+			{
+				existing.Name = table.Name;
+				existing.CorrectionUser = adminId.Value;
+				existing.CorrectionDate = DateTime.Now;
 
-			await _dbContext.SaveChangesAsync();
-
-			return Json(new { success = true, message = "Masa güncellendi!" });
+				await _dbContext.SaveChangesAsync();
+				return Json(new { success = true, message = "Masa güncellendi!" });
+			}
+			return Json(new { success = false, message = "Masa güncellenemedi!" });
 		}
 
+		[AuthorizeWithPermission("DeleteTable")]
 		[HttpPost]
 		public IActionResult DeleteTable([FromBody] JsonElement request)
 		{
@@ -325,12 +365,12 @@ namespace ProjectCafeWeb.Controllers
 			if (adminId == null)
 				return Unauthorized();
 
-			int id = request.GetProperty("id").GetInt32();
+			int tableId = request.GetProperty("id").GetInt32();
 
 			var table = _dbContext.Table
 				.Include(t => t.Section)
 				.ThenInclude(s => s.Cafe)
-				.FirstOrDefault(t => t.Id == id && t.Section.Cafe.AdminId == adminId);
+				.FirstOrDefault(t => t.Id == tableId && t.Section.Cafe.AdminId == adminId);
 
 			if (table == null)
 				return Json(new { success = false, message = "Masa bulunamadı veya yetkiniz yok." });

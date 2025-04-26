@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using ProjectCafeDataAccess;
 using ProjectCafeEntities;
 using System.Security.Claims;
@@ -32,25 +33,65 @@ namespace ProjectCafeWeb.Controllers
 					x.Password.Equals(password, StringComparison.Ordinal) &&
 					x.Active);
 
-			if (user != null)
+			string role = "Admin";
+			List<string> permissions = new();
+
+			if (user == null)
 			{
-				var claims = new List<Claim>
+				var worker = _dbContext.Worker
+					.AsEnumerable()
+					.FirstOrDefault(x =>
+						x.Email.Equals(email, StringComparison.Ordinal) &&
+						x.Password.Equals(password, StringComparison.Ordinal) &&
+						x.Active);
+
+				if (worker != null)
 				{
-					new Claim(ClaimTypes.Name, user.Email),
-					new Claim("UserId", user.Id.ToString()),
-					new Claim("FullName", user.Firstname + " " + user.Lastname)
-				};
+					role = "Worker";
 
-				var claimsIdentity = new ClaimsIdentity(claims, "cookieAuth");
-				var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+					if (!string.IsNullOrEmpty(worker.RolePermissions))
+					{
+						permissions = JsonConvert.DeserializeObject<List<string>>(worker.RolePermissions) ?? new List<string>();
+					}
 
-				await HttpContext.SignInAsync("cookieAuth", claimsPrincipal);
+					var claims = new List<Claim>
+					{
+						new Claim(ClaimTypes.Name, worker.Email),
+						new Claim("UserId", worker.Id.ToString()),
+						new Claim("FullName", worker.Firstname + " " + worker.Lastname),
+						new Claim(ClaimTypes.Role, role),
+						new Claim("Permissions", JsonConvert.SerializeObject(permissions))
+					};
 
-				return RedirectToAction("Home", "Home");
+					var claimsIdentity = new ClaimsIdentity(claims, "cookieAuth");
+					var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
+
+					await HttpContext.SignInAsync("cookieAuth", claimsPrincipal);
+
+					return RedirectToAction("Home", "Home");
+				}
+				else
+				{
+					ViewBag.LoginError = "Email veya şifre yanlış.";
+					return View();
+				}
 			}
 
-			ViewBag.LoginError = "Email veya şifre yanlış.";
-			return View();
+			var adminClaims = new List<Claim>
+			{
+				new Claim(ClaimTypes.Name, user.Email),
+				new Claim("UserId", user.Id.ToString()),
+				new Claim("FullName", user.Firstname + " " + user.Lastname),
+				new Claim(ClaimTypes.Role, role),
+				new Claim("Permissions", JsonConvert.SerializeObject(permissions))
+			};
+
+			var adminClaimsIdentity = new ClaimsIdentity(adminClaims, "cookieAuth");
+			var adminClaimsPrincipal = new ClaimsPrincipal(adminClaimsIdentity);
+
+			await HttpContext.SignInAsync("cookieAuth", adminClaimsPrincipal);
+
+			return RedirectToAction("Home", "Home");
 		}
 
 		public async Task<IActionResult> LogOut()

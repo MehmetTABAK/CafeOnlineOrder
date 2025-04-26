@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectCafeDataAccess;
 using ProjectCafeEntities;
+using ProjectCafeWeb.Attributes;
 using System.Text.Json;
 
 namespace ProjectCafeWeb.Controllers
@@ -18,6 +19,7 @@ namespace ProjectCafeWeb.Controllers
 			_dbContext = dbContext;
 		}
 
+		[AuthorizeWithPermission("ViewMenuCategory")]
 		public IActionResult MenuCategory()
 		{
 			var adminId = GetCurrentAdminId();
@@ -31,6 +33,7 @@ namespace ProjectCafeWeb.Controllers
 			return View(menuCategories);
 		}
 
+		[AuthorizeWithPermission("AddMenuCategory")]
 		[HttpPost]
 		public async Task<IActionResult> AddMenuCategory([FromBody] MenuCategory menuCategory)
 		{
@@ -56,10 +59,10 @@ namespace ProjectCafeWeb.Controllers
 				await _dbContext.SaveChangesAsync();
 				return Json(new { success = true, message = "Üst menü başarıyla eklendi!" });
 			}
-
 			return Json(new { success = false, message = "Üst menü eklenemedi!" });
 		}
 
+		[AuthorizeWithPermission("UpdateMenuCategory")]
 		[HttpPost]
 		public async Task<IActionResult> UpdateMenuCategory([FromBody] MenuCategory menuCategory)
 		{
@@ -87,6 +90,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Üst menü güncellenemedi!" });
 		}
 
+		[AuthorizeWithPermission("DeleteMenuCategory")]
 		[HttpPost]
 		public IActionResult DeleteMenuCategory([FromBody] JsonElement request)
 		{
@@ -129,6 +133,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = true, message = "Üst menü ve bağlı alt menüler ile ürünler pasifleştirildi!" });
 		}
 
+		[AuthorizeWithPermission("ViewSubMenuCategory")]
 		public IActionResult SubMenuCategory()
 		{
 			var adminId = GetCurrentAdminId();
@@ -154,6 +159,7 @@ namespace ProjectCafeWeb.Controllers
 			return View(subMenuCategories);
 		}
 
+		[AuthorizeWithPermission("AddSubMenuCategory")]
 		[HttpPost]
 		public async Task<IActionResult> AddSubMenuCategory([FromBody] SubMenuCategory subMenuCategory)
 		{
@@ -182,6 +188,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Alt menü eklenemedi!" });
 		}
 
+		[AuthorizeWithPermission("UpdateSubMenuCategory")]
 		[HttpPost]
 		public async Task<IActionResult> UpdateSubMenuCategory([FromBody] SubMenuCategory subMenuCategory)
 		{
@@ -210,6 +217,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Alt menü güncellenemedi!" });
 		}
 
+		[AuthorizeWithPermission("DeleteSubMenuCategory")]
 		[HttpPost]
 		public IActionResult DeleteSubMenuCategory([FromBody] JsonElement request)
 		{
@@ -244,6 +252,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = true, message = "Alt menü ve ürünler pasifleştirildi!" });
 		}
 
+		[AuthorizeWithPermission("ViewProduct")]
 		public IActionResult Product()
 		{
 			var adminId = GetCurrentAdminId();
@@ -277,6 +286,7 @@ namespace ProjectCafeWeb.Controllers
 			return View(products);
 		}
 
+		[AuthorizeWithPermission("AddProduct")]
 		[HttpPost]
 		public async Task<IActionResult> AddProduct([FromBody] Product product)
 		{
@@ -305,6 +315,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Ürün eklenemedi!" });
 		}
 
+		[AuthorizeWithPermission("UpdateProduct")]
 		[HttpPost]
 		public async Task<IActionResult> UpdateProduct([FromBody] Product product)
 		{
@@ -338,6 +349,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = false, message = "Ürün güncellenemedi!" });
 		}
 
+		[AuthorizeWithPermission("UpdateStockProduct")]
 		[HttpPost]
 		public IActionResult UpdateStock([FromBody] JsonElement request)
 		{
@@ -363,6 +375,7 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = true });
 		}
 
+		[AuthorizeWithPermission("DeleteProduct")]
 		[HttpPost]
 		public IActionResult DeleteProduct([FromBody] JsonElement request)
 		{

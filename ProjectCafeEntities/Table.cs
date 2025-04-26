@@ -17,8 +17,8 @@ namespace ProjectCafeEntities
 		public int? CorrectionUser { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 
-		public virtual Section Section { get; set; }
-		public virtual ICollection<Order> Orders { get; set; }
-		public virtual ICollection<Payment> Payments { get; set; }
+		public virtual Section? Section { get; set; }
+		public virtual ICollection<Order>? Orders { get; set; }
+		public virtual ICollection<Payment>? Payments { get; set; }
 	}
 }

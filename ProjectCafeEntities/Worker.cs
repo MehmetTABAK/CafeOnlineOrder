@@ -15,6 +15,7 @@ namespace ProjectCafeEntities
 		public string? Image { get; set; }
 		public string Email { get; set; }
 		public string Password { get; set; }
+		public string? RolePermissions { get; set; }
 		public bool Active { get; set; }
 		public int RegistrationUser { get; set; }
 		public DateTime RegistrationDate { get; set; }

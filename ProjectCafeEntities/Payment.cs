@@ -11,13 +11,13 @@ namespace ProjectCafeEntities
 		public int Id { get; set; }
 		public int TableId { get; set; }
 		public double TotalPrice { get; set; }
-		public short Method { get; set; }
+		public byte Method { get; set; }
 		public bool Active { get; set; }
 		public int RegistrationUser { get; set; }
 		public DateTime RegistrationDate { get; set; }
 		public int? CorrectionUser { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 
-		public virtual Table Table { get; set; }
+		public virtual Table? Table { get; set; }
 	}
 }

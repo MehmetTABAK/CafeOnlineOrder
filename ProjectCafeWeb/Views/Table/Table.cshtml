@@ -1,8 +1,622 @@
-﻿
-@{
+﻿@{
     ViewData["Title"] = "Masalar";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<h1>Table</h1>
+@using ProjectCafeEntities
+@using System.Security.Claims
+@model List<Table>
 
+@{
+    var isLoggedIn = User.Identity.IsAuthenticated;
+    var fullName = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == "FullName")?.Value : null;
+    var initials = fullName != null ? string.Concat(fullName.Split(" ").Select(s => s[0])) : "G";
+    var role = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value : null;
+    var permissionsJson = isLoggedIn ? User.Claims.FirstOrDefault(c => c.Type == "Permissions")?.Value : null;
+    var allowedPages = !string.IsNullOrEmpty(permissionsJson) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(permissionsJson) : new List<string>();
+}
+
+@foreach (var sectionGroup in Model.GroupBy(p => p.Section?.Name))
+{
+    <div class="menu-divider">
+        <span>@sectionGroup.Key</span>
+    </div>
+
+    <div class="row pt-4">
+        @foreach (var table in sectionGroup)
+        {
+            <div class="col-md-4 mb-4">
+                @{
+                    string bgClass = "bg-white";
+
+                    var activeOrders = table.Orders.Where(o => o.Active).ToList();
+
+                    if (activeOrders.Count != 0)
+                    {
+                        if (activeOrders.All(o => o.Status == 4))
+                        {
+                            bgClass = "bg-brown";
+                        }
+                        else if (activeOrders.All(o => o.Status == 5))
+                        {
+                            bgClass = "bg-white";
+                        }
+                        else if (activeOrders.Any(o => o.Status != 4 && o.Status != 5))
+                        {
+                            bgClass = "bg-yellow";
+                        }
+                    }
+                }
+                <div class="blog-card @bgClass">
+                    <div class="blog-content">
+                        <a href="#">
+                            <h3 class="mb-4 mt-2">
+                                @table.Name
+                            </h3>
+                        </a>
+                        <div class="d-flex justify-content-between gap-2 mt-3">
+                            @if (role == "Admin" || allowedPages.Contains("ViewTableDetails"))
+                            {
+                                <a href="#">
+                                    <button class="readmore-btn edit-table-btn"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#tableModal"
+                                            data-id="@table.Id">
+                                        <span class="book-wrapper">
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="rgb(86, 69, 117)"
+                                                 viewBox="0 0 126 75"
+                                                 class="book">
+                                                <rect stroke-width="3"
+                                                      stroke="#fff"
+                                                      rx="7.5"
+                                                      height="70"
+                                                      width="121"
+                                                      y="2.5"
+                                                      x="2.5"></rect>
+                                                <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M25 20H50"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M101 20H76"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M16 30L50 30"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M110 30L76 30"></path>
+                                            </svg>
+
+                                            <svg xmlns="http://www.w3.org/2000/svg"
+                                                 fill="none"
+                                                 viewBox="0 0 65 75"
+                                                 class="book-page">
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M40 20H15"></path>
+                                                <path stroke-linecap="round"
+                                                      stroke-width="4"
+                                                      stroke="#fff"
+                                                      d="M49 30L15 30"></path>
+                                                <path stroke-width="3"
+                                                      stroke="#fff"
+                                                      d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
+                                            </svg>
+                                        </span>
+                                        <span class="text"> Masa Detayları </span>
+                                    </button>
+                                </a>
+                            }
+                            @if (role == "Admin" || allowedPages.Contains("CloseTable"))
+                            {
+                                <a href="#">
+                                    <button class="noselect close-table-btn" data-id="@table.Id">
+                                        <span class="text">Masayı Kapat</span>
+                                        <span class="icon">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                                <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
+                                            </svg>
+                                        </span>
+                                    </button>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Modal -->
+<div class="modal fade" id="tableModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Masa Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h3 id="modalTableName"></h3>
+                <hr />
+                <div id="orderList"></div>
+
+                <div class="d-flex justify-content-between align-items-start mt-3 mb-3">
+                    <div>
+                        <strong>Seçilen Ürünlerin Tutarı: <span id="selectedAmount">0</span> TL</strong>
+                    </div>
+
+                    <div class="text-end">
+                        <strong>Toplam Tutar: <span id="totalAmount">0</span> TL</strong><br>
+                        <strong>Ödenen Tutar: <span id="paidAmount">0</span> TL</strong><br>
+                        <strong>Kalan Tutar: <span id="remainingAmount">0</span> TL</strong>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <div class="d-flex gap-2">
+                        @if (role == "Admin" || allowedPages.Contains("Payment"))
+                        {
+                            <button id="partialPayBtn" class="btn btn-secondary" disabled>Seçilenleri Öde</button>
+                        }
+                        @* <button id="cancelAllOrdersBtn" class="btn btn-danger" disabled>Tüm Ödemeleri İptal Et</button> *@
+                    </div>
+                    <div class="d-flex gap-2">
+                        @if (role == "Admin" || allowedPages.Contains("Payment"))
+                        {
+                            <button id="payCardBtn" class="btn btn-primary">Kart ile Ödendi</button>
+                            <button id="payCashBtn" class="btn btn-success">Nakit Ödendi</button>
+                        }
+                    </div>
+                </div>
+
+                <div class="mb-3 mt-3">
+                    @if (role == "Admin" || allowedPages.Contains("MoveTableAndOrders"))
+                    {
+                        <label for="moveTableSelect" class="form-label">Masayı Taşı</label>
+                        <select id="moveTableSelect" class="form-select"></select>
+                        <button id="moveTableBtn" class="btn btn-warning mt-2">Taşı</button>
+                        <button id="moveSelectedOrdersBtn" class="btn btn-info mt-2" disabled>Seçilenleri Taşı</button>
+                    }
+                    @* <button id="cancelSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İptal Et</button> *@
+                    @if (role == "Admin" || allowedPages.Contains("AddOrders"))
+                    {
+                        <div class="d-flex justify-content-end">
+                            <button class="addimg" id="openOrderModalBtn">
+                                <span class="addimg__text">Sipariş Ekle</span>
+                                <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Parçalı ödeme modalı -->
+@if (role == "Admin" || allowedPages.Contains("Payment"))
+{
+    <div class="modal fade" id="paymentMethodModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Parçalı Ödeme</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="splitOrderList" class="mb-3 border p-2 rounded bg-light"></div>
+                    <p>Toplam: <strong><span id="splitTotalAmount">0</span> TL</strong></p>
+                    <div class="form-group mb-3">
+                        <label>Kart ile Ödenen</label>
+                        <input type="number" class="form-control" id="splitCardAmount" min="0" />
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Nakit ile Ödenen</label>
+                        <input type="number" class="form-control" id="splitCashAmount" min="0" />
+                    </div>
+                    <button id="confirmSplitPayment" class="btn btn-primary w-100">Ödemeyi Tamamla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Sipariş Ekle Modalı -->
+@if (role == "Admin" || allowedPages.Contains("AddOrders"))
+{
+    <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content p-3">
+                <div class="modal-header">
+                    <h5 class="modal-title">Sipariş Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Kategori Seç</label>
+                        <select id="menuCategorySelect" class="form-select"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Alt Kategori Seç</label>
+                        <select id="subMenuCategorySelect" class="form-select"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Ürün Seç</label>
+                        <div id="productCheckboxList" class="d-flex flex-wrap gap-2"></div>
+                    </div>
+                    <button id="addOrderBtn" class="btn btn-primary">Siparişleri Ekle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        let selectedTableId;
+        let selectedOrderIds = [];
+
+        $(document).on('click', '.edit-table-btn', function () {
+            selectedTableId = $(this).data('id');
+            sessionStorage.setItem('lastOpenedTableId', selectedTableId);
+            loadTableDetails(selectedTableId);
+        });
+
+        function loadTableDetails(tableId) {
+            $.get('/Table/GetTableDetails', { tableId: tableId }, function (data) {
+                $('#modalTableName').html(`<strong>${data.name}</strong> <span class="text-muted">(${data.sectionName || 'Bölüm yok'})</span>`);
+                selectedOrderIds = [];
+
+                let totalAmount = 0;
+                let paidAmount = 0;
+                let hasPaidOrders = false;
+
+                const allPaid = data.orders.every(o => o.status === 4);
+                togglePaymentButtons(!allPaid);
+
+                let orders = data.orders.map(o => {
+                    let orderStatusText = '';
+                    if (o.status === 1) {
+                        orderStatusText = 'Sipariş Verildi';
+                    } else if (o.status === 2) {
+                        orderStatusText = 'Hazırlanıyor';
+                    } else if (o.status === 3) {
+                        orderStatusText = 'Teslim Edildi';
+                    } else if (o.status === 4) {
+                        orderAction = `<button class="btn btn-link btn-sm cancel-order-btn" data-id="${o.id}">
+                                <i class="bi bi-x-circle-fill text-danger"></i>
+                              </button>`;
+                              hasPaidOrders = true;
+                    }
+
+                const row = o.status === 4
+                    ? `<div class="d-flex justify-content-between align-items-center border-bottom py-1">
+                           <div>${o.productName}</div>
+                           <div class="d-flex justify-content-end align-items-center gap-2">
+                           <span class="text-success"> <i class="bi bi-check-circle-fill"></i> Ödendi</span>
+                           <div>${orderAction}</div>
+                           </div>
+                       </div>`
+                    : `<div class="d-flex justify-content-between align-items-center border-bottom py-1">
+                           <div>
+                               <input type="checkbox" class="form-check-input order-checkbox me-2" data-id="${o.id}" data-price="${o.price}" />
+                               ${o.productName}
+                           </div>
+                           <div class="d-flex justify-content-center flex-grow-1">
+                               <span class="order-status">${orderStatusText}</span>
+                           </div>
+                           <span class="price">${o.price} TL</span>
+                       </div>`;
+
+                if (o.status === 4) paidAmount += o.price;
+                if (o.status !== 0) totalAmount += o.price;
+                return row;
+            }).join('');
+
+                $('#orderList').html(orders);
+                $('#totalAmount').text(totalAmount);
+                $('#paidAmount').text(paidAmount);
+                const remaining = totalAmount - paidAmount;
+                $('#remainingAmount').text((remaining > 0 ? remaining : 0).toFixed(2) + '');
+                $('#selectedAmount').text(0);
+                togglePaymentButtons(totalAmount > 0);
+
+                $('#cancelAllOrdersBtn').prop('disabled', !hasPaidOrders);
+
+                $('#moveTableSelect').empty();
+                data.allTables.forEach(t => {
+                    if (t.id !== tableId)
+                        $('#moveTableSelect').append(`<option value="${t.id}">${t.name}</option>`);
+                });
+            });
+        }
+
+        function togglePaymentButtons(enabled) {
+            $('#payCardBtn, #payCashBtn').prop('disabled', !enabled);
+        }
+
+        $(document).on('change', '.order-checkbox', function () {
+            selectedOrderIds = $('.order-checkbox:checked').map(function () {
+                return parseInt($(this).data('id'));
+            }).get();
+
+            let total = $('.order-checkbox:checked').toArray().reduce((sum, el) => sum + parseFloat($(el).data('price')), 0);
+            $('#selectedAmount').text(total);
+            $('#partialPayBtn').prop('disabled', selectedOrderIds.length === 0);
+        });
+
+        let selectedAmount = 0;
+
+        $('#partialPayBtn').click(function () {
+            if (selectedOrderIds.length === 0) return;
+            selectedAmount = parseFloat($('#selectedAmount').text());
+            $('#splitTotalAmount').text(selectedAmount.toFixed(2));
+            $('#splitCardAmount').val('');
+            $('#splitCashAmount').val('');
+
+            let selectedItems = $('.order-checkbox:checked').map(function () {
+                const productName = $(this).closest('div').text().trim();
+                const price = parseFloat($(this).data('price')).toFixed(2);
+                return `<div class="d-flex justify-content-between"><span>${productName}</span><span>${price} TL</span></div>`;
+            }).get().join('');
+
+            $('#splitOrderList').html(selectedItems);
+            $('#tableModal').modal('hide');
+            $('#paymentMethodModal').modal('show');
+        });
+
+        $('#splitCardAmount').on('keyup', function () {
+            let card = parseFloat($(this).val()) || 0;
+            let cash = (selectedAmount - card).toFixed(2);
+            $('#splitCashAmount').val(cash >= 0 ? cash : 0);
+        });
+
+        $('#splitCashAmount').on('keyup', function () {
+            let cash = parseFloat($(this).val()) || 0;
+            let card = (selectedAmount - cash).toFixed(2);
+            $('#splitCardAmount').val(card >= 0 ? card : 0);
+        });
+
+        $('#confirmSplitPayment').click(function () {
+            let card = parseFloat($('#splitCardAmount').val()) || 0;
+            let cash = parseFloat($('#splitCashAmount').val()) || 0;
+            let total = card + cash;
+
+            if (Math.abs(total - selectedAmount) > 0.01) {
+                alert(`Girilen tutarların toplamı ${selectedAmount.toFixed(2)} TL ile eşleşmiyor.`);
+                return;
+            }
+
+            const payload = {
+                orderIds: selectedOrderIds,
+                cardAmount: card,
+                cashAmount: cash
+            };
+
+            $.post('/Table/PaySelectedOrdersSplit', payload, function () {
+                $('#paymentMethodModal').modal('hide');
+                loadTableDetails(selectedTableId);
+            });
+        });
+
+        $('#paymentMethodModal').on('hidden.bs.modal', function () {
+            $('#tableModal').modal('show');
+        });
+
+        $('#openOrderModalBtn').click(function () {
+            $('#menuCategorySelect').val('');
+            $('#subMenuCategorySelect').empty();
+            $('#productCheckboxList').empty();
+
+            $('#tableModal').modal('hide');
+            $('#orderModal').modal('show');
+        });
+
+        $('#orderModal').on('hidden.bs.modal', function () {
+            $('#tableModal').modal('show');
+        });
+
+        $('#paySelectedCard, #paySelectedCash').click(function () {
+            const method = parseInt($(this).data('method'));
+
+            $.post('/Table/PaySelectedOrders', {
+                orderIds: selectedOrderIds,
+                method: method
+            }, function () {
+                $('#paymentMethodModal').modal('hide');
+                loadTableDetails(selectedTableId);
+            });
+        });
+
+        $('#moveTableBtn').click(function () {
+            let toId = $('#moveTableSelect').val();
+            $.post('/Table/MoveTable', { fromId: selectedTableId, toId }, function () {
+                loadTableDetails(selectedTableId);
+            });
+        });
+
+        $('#moveSelectedOrdersBtn').click(function () {
+            const toId = $('#moveTableSelect').val();
+            if (selectedOrderIds.length === 0 || !toId) return;
+
+            $.post('/Table/MoveSelectedOrders', { toId: toId, orderIds: selectedOrderIds }, function () {
+                loadTableDetails(selectedTableId);
+            });
+        });
+
+        $('#payCardBtn').click(() => {
+            $.post('/Table/CompletePayment', { tableId: selectedTableId, method: 1 }, function () {
+                localStorage.setItem('openModalTableId', selectedTableId);
+                location.reload();
+            });
+        });
+
+        $('#payCashBtn').click(() => {
+            $.post('/Table/CompletePayment', { tableId: selectedTableId, method: 2 }, function () {
+                loadTableDetails(selectedTableId);
+            });
+        });
+
+        $(document).on('change', '.order-checkbox', function () {
+            selectedOrderIds = $('.order-checkbox:checked').map(function () {
+                return parseInt($(this).data('id'));
+            }).get();
+
+            let total = $('.order-checkbox:checked').toArray().reduce((sum, el) => sum + parseFloat($(el).data('price')), 0);
+            $('#selectedAmount').text(total);
+            const hasSelection = selectedOrderIds.length > 0;
+            $('#partialPayBtn').prop('disabled', !hasSelection);
+            $('#moveSelectedOrdersBtn').prop('disabled', !hasSelection);
+        });
+
+        $(document).on('click', '.cancel-order-btn', function () {
+            const orderId = $(this).data('id');
+
+            $.post('/Table/UpdateOrderStatus', { orderId: orderId }, function () {
+                 loadTableDetails(selectedTableId);
+            });
+        });
+
+        document.querySelectorAll('.close-table-btn').forEach(button => {
+            button.addEventListener('click', function () {
+                const tableId = this.getAttribute('data-id');
+                if (!confirm("Bu masayı kapatmak istiyor musunuz?")) return;
+
+                fetch('/Table/CloseTable', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: parseInt(tableId) })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(data.message);
+                            location.reload();
+                        } else {
+                            alert(data.message || 'Masa kapatma başarısız oldu.');
+                        }
+                    })
+                    .catch(() => alert('Sunucu hatası oluştu.'));
+            });
+        });
+
+        $(document).on('change', '.order-checkbox', function () {
+            const anyChecked = $('.order-checkbox:checked').length > 0;
+            $('#cancelSelectedOrdersBtn').prop('disabled', !anyChecked);
+        });
+
+        $('#cancelSelectedOrdersBtn').click(function () {
+            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
+                return parseInt($(this).data('id'));
+            }).get();
+
+            if (selectedOrderIds.length === 0) {
+                alert("Lütfen iptal etmek istediğiniz siparişleri seçin.");
+                return;
+            }
+
+            if (!confirm("Seçilen siparişleri iptal etmek istediğinize emin misiniz?")) return;
+
+            $.post('/Table/CancelOrders', {
+                orderIds: selectedOrderIds
+            }, function (res) {
+                if (res.success) {
+                    alert("Seçilen siparişler iptal edildi.");
+                    loadTableDetails(selectedTableId);
+                } else {
+                    alert("İptal işlemi başarısız oldu.");
+                }
+            });
+        });
+
+        $('.addimg').click(function () {
+            $.get('/Table/GetMenuCategories', function (data) {
+                $('#menuCategorySelect').html('<option value="">Seçiniz</option>');
+                data.forEach(item => {
+                    $('#menuCategorySelect').append(`<option value="${item.id}">${item.categoryName}</option>`);
+                });
+            });
+
+            $('#subMenuCategorySelect').html('');
+            $('#productCheckboxList').html('');
+        });
+
+        $('#menuCategorySelect').change(function () {
+            const categoryId = $(this).val();
+            $.get(`/Table/GetSubMenuCategories?categoryId=${categoryId}`, function (data) {
+                $('#subMenuCategorySelect').html('<option value="">Seçiniz</option>');
+                data.forEach(item => {
+                    $('#subMenuCategorySelect').append(`<option value="${item.id}">${item.subCategoryName}</option>`);
+                });
+            });
+        });
+
+        $('#subMenuCategorySelect').change(function () {
+            const subCategoryId = $(this).val();
+            $.get(`/Table/GetProducts?subCategoryId=${subCategoryId}`, function (data) {
+                let html = '';
+                data.forEach(item => {
+                    html += `
+                        <div class="form-check">
+                            <input class="form-check-input product-checkbox" type="checkbox" value="${item.id}" id="prod${item.id}">
+                            <label class="form-check-label me-2" for="prod${item.id}">
+                                ${item.name} - ${item.price} TL
+                            </label>
+                            <input type="number" min="1" value="1" class="form-control form-control-sm product-quantity" data-product-id="${item.id}" style="width: 60px;" />
+                        </div>`;
+                });
+                $('#productCheckboxList').html(html);
+            });
+        });
+
+        $('#addOrderBtn').click(function () {
+            const selectedProducts = [];
+
+            $('.product-checkbox:checked').each(function () {
+                const productId = $(this).val();
+                const quantityInput = $(`.product-quantity[data-product-id="${productId}"]`);
+                const quantity = parseInt(quantityInput.val()) || 1;
+
+                for (let i = 0; i < quantity; i++) {
+                    selectedProducts.push(productId);
+                }
+            });
+
+            if (selectedProducts.length === 0) {
+                alert("Lütfen en az bir ürün seçin.");
+                return;
+            }
+
+            $.post('/Table/AddOrders', {
+                productIds: selectedProducts,
+                tableId: selectedTableId
+            }, function (res) {
+                if (res.success) {
+                    alert("Siparişler eklendi.");
+                    $('#orderModal').modal('hide');
+                    loadTableDetails(selectedTableId);
+                }
+            });
+        });
+
+        $(document).on('click', '#cancelAllOrdersBtn', function () {
+            if (!selectedTableId) return;
+
+            if (confirm("Tüm ödenmiş siparişleri iptal etmek istediğinize emin misiniz?")) {
+                $.post('/Table/CancelAllPaidOrders', { tableId: selectedTableId }, function () {
+                    loadTableDetails(selectedTableId);
+                });
+            }
+        });
+    </script>
+}
