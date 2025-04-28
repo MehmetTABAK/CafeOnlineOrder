@@ -12,22 +12,21 @@ namespace ProjectCafeWeb.Controllers
 	[Authorize]
 	public class DataController : BaseController
 	{
-		private readonly ProjectCafeDbContext _dbContext;
-
-		public DataController(ProjectCafeDbContext dbContext)
+		public DataController(ProjectCafeDbContext dbContext) : base(dbContext)
 		{
-			_dbContext = dbContext;
 		}
 
 		[AuthorizeWithPermission("ViewMenuCategory")]
 		public IActionResult MenuCategory()
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
-				return RedirectToAction("SignIn", "Login");
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
+				return Unauthorized();
 
 			List<MenuCategory> menuCategories = _dbContext.MenuCategory.Include(mc => mc.Cafe)
-				.Where(mc => mc.Active && mc.Cafe.AdminId == adminId)
+				.Where(mc => mc.Active && mc.Cafe.Id == cafeId)
 				.ToList();
 
 			return View(menuCategories);
@@ -37,22 +36,25 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> AddMenuCategory([FromBody] MenuCategory menuCategory)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			var cafeId = _dbContext.Cafe
-				.Where(c => c.AdminId == adminId)
+			var cafeIds = _dbContext.Cafe
+				.Where(c => c.Id == cafeId)
 				.Select(c => c.Id)
 				.FirstOrDefault();
 
-			if (cafeId == 0)
+			if (cafeIds == 0)
 				return Json(new { success = false, message = "Kafe bulunamadı!" });
 
 			if (ModelState.IsValid)
 			{
-				menuCategory.CafeId = cafeId;
-				menuCategory.RegistrationUser = adminId.Value;
+				menuCategory.CafeId = cafeIds;
+				menuCategory.RegistrationUser = userId.Value;
+				menuCategory.RegistrationUserRole = userRole;
 				menuCategory.RegistrationDate = DateTime.Now;
 				// Ürünü veritabanına kaydet
 				_dbContext.MenuCategory.Add(menuCategory);
@@ -66,13 +68,15 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateMenuCategory([FromBody] MenuCategory menuCategory)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var existing = await _dbContext.MenuCategory
 				.Include(mc => mc.Cafe)
-				.FirstOrDefaultAsync(mc => mc.Id == menuCategory.Id && mc.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(mc => mc.Id == menuCategory.Id && mc.Cafe.Id == cafeId);
 
 			if (existing == null)
 				return Json(new { success = false, message = "Güncellenecek menü bulunamadı!" });
@@ -81,7 +85,8 @@ namespace ProjectCafeWeb.Controllers
 			{
 				existing.CategoryName = menuCategory.CategoryName;
 				existing.CategoryImage = menuCategory.CategoryImage;
-				existing.CorrectionUser = adminId.Value;
+				existing.CorrectionUser = userId.Value;
+				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
 				await _dbContext.SaveChangesAsync();
@@ -94,8 +99,10 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult DeleteMenuCategory([FromBody] JsonElement request)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var menuCategoryId = request.GetProperty("id").GetInt32();
@@ -104,26 +111,29 @@ namespace ProjectCafeWeb.Controllers
 				.Include(mc => mc.Cafe)
 				.Include(mc => mc.SubMenuCategories)
 					.ThenInclude(sc => sc.Products)
-				.FirstOrDefault(mc => mc.Id == menuCategoryId && mc.Cafe.AdminId == adminId);
+				.FirstOrDefault(mc => mc.Id == menuCategoryId && mc.Cafe.Id == cafeId);
 
 			if (menuCategory == null)
 				return Json(new { success = false, message = "Menü bulunamadı veya yetkiniz yok." });
 
 			menuCategory.Active = false;
-			menuCategory.CorrectionUser = adminId.Value;
+			menuCategory.CorrectionUser = userId.Value;
+			menuCategory.CorrectionUserRole = userRole;
 			menuCategory.CorrectionDate = DateTime.Now;
 
 			// Alt menüler + ürünleri de pasifleştir
 			foreach (var sub in menuCategory.SubMenuCategories ?? new List<SubMenuCategory>())
 			{
 				sub.Active = false;
-				sub.CorrectionUser = adminId.Value;
+				sub.CorrectionUser = userId.Value;
+				sub.CorrectionUserRole = userRole;
 				sub.CorrectionDate = DateTime.Now;
 
 				foreach (var product in sub.Products ?? new List<Product>())
 				{
 					product.Active = false;
-					product.CorrectionUser = adminId.Value;
+					product.CorrectionUser = userId.Value;
+					product.CorrectionUserRole = userRole;
 					product.CorrectionDate = DateTime.Now;
 				}
 			}
@@ -136,12 +146,14 @@ namespace ProjectCafeWeb.Controllers
 		[AuthorizeWithPermission("ViewSubMenuCategory")]
 		public IActionResult SubMenuCategory()
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
-				return RedirectToAction("SignIn", "Login");
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
+				return Unauthorized();
 
 			var cafeIds = _dbContext.Cafe
-				.Where(c => c.AdminId == adminId)
+				.Where(c => c.Id == cafeId)
 				.Select(c => c.Id)
 				.ToList();
 
@@ -163,20 +175,23 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> AddSubMenuCategory([FromBody] SubMenuCategory subMenuCategory)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var menuCategory = await _dbContext.MenuCategory
 				.Include(mc => mc.Cafe)
-				.FirstOrDefaultAsync(mc => mc.Id == subMenuCategory.MenuCategoryId && mc.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(mc => mc.Id == subMenuCategory.MenuCategoryId && mc.Cafe.Id == cafeId);
 
 			if (menuCategory == null)
 				return Json(new { success = false, message = "Yetkiniz olmayan bir menüye alt menü ekleyemezsiniz." });
 
 			if (ModelState.IsValid)
 			{
-				subMenuCategory.RegistrationUser = adminId.Value;
+				subMenuCategory.RegistrationUser = userId.Value;
+				subMenuCategory.RegistrationUserRole = userRole;
 				subMenuCategory.RegistrationDate = DateTime.Now;
 				subMenuCategory.Active = true;
 				// Ürünü veritabanına kaydet
@@ -192,13 +207,15 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateSubMenuCategory([FromBody] SubMenuCategory subMenuCategory)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var existing = await _dbContext.SubMenuCategory
 				.Include(sm => sm.MenuCategory).ThenInclude(mc => mc.Cafe)
-				.FirstOrDefaultAsync(sm => sm.Id == subMenuCategory.Id && sm.MenuCategory.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(sm => sm.Id == subMenuCategory.Id && sm.MenuCategory.Cafe.Id == userId);
 
 			if (existing == null)
 				return Json(new { success = false, message = "Alt menü bulunamadı veya yetkiniz yok." });
@@ -208,7 +225,8 @@ namespace ProjectCafeWeb.Controllers
 				existing.SubCategoryName = subMenuCategory.SubCategoryName;
 				existing.SubCategoryImage = subMenuCategory.SubCategoryImage;
 				existing.MenuCategoryId = subMenuCategory.MenuCategoryId;
-				existing.CorrectionUser = adminId.Value;
+				existing.CorrectionUser = userId.Value;
+				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
 				await _dbContext.SaveChangesAsync();
@@ -221,8 +239,10 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult DeleteSubMenuCategory([FromBody] JsonElement request)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var subMenuCategoryId = request.GetProperty("id").GetInt32();
@@ -230,20 +250,22 @@ namespace ProjectCafeWeb.Controllers
 			var subMenuCategory = _dbContext.SubMenuCategory
 				.Include(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
 				.Include(sc => sc.Products)
-				.FirstOrDefault(sc => sc.Id == subMenuCategoryId && sc.MenuCategory.Cafe.AdminId == adminId);
+				.FirstOrDefault(sc => sc.Id == subMenuCategoryId && sc.MenuCategory.Cafe.Id == userId);
 
 			if (subMenuCategory == null)
 				return Json(new { success = false, message = "Alt menü bulunamadı veya yetkiniz yok." });
 
 			subMenuCategory.Active = false;
-			subMenuCategory.CorrectionUser = adminId.Value;
+			subMenuCategory.CorrectionUser = userId.Value;
+			subMenuCategory.CorrectionUserRole = userRole;
 			subMenuCategory.CorrectionDate = DateTime.Now;
 
 			// Alt ürünleri de pasifleştir
 			foreach (var product in subMenuCategory.Products ?? new List<Product>())
 			{
 				product.Active = false;
-				product.CorrectionUser = adminId.Value;
+				product.CorrectionUser = userId.Value;
+				product.CorrectionUserRole = userRole;
 				product.CorrectionDate = DateTime.Now;
 			}
 
@@ -255,11 +277,14 @@ namespace ProjectCafeWeb.Controllers
 		[AuthorizeWithPermission("ViewProduct")]
 		public IActionResult Product()
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null) return RedirectToAction("SignIn", "Login");
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
+				return Unauthorized();
 
 			var cafeIds = _dbContext.Cafe
-				.Where(c => c.AdminId == adminId)
+				.Where(c => c.Id == cafeId)
 				.Select(c => c.Id)
 				.ToList();
 
@@ -290,20 +315,23 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> AddProduct([FromBody] Product product)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var subCategory = await _dbContext.SubMenuCategory
 				.Include(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
-				.FirstOrDefaultAsync(sc => sc.Id == product.SubMenuCategoryId && sc.MenuCategory.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(sc => sc.Id == product.SubMenuCategoryId && sc.MenuCategory.Cafe.Id == cafeId);
 
 			if (subCategory == null)
 				return Json(new { success = false, message = "Yetkisiz alt menü, ürün eklenemedi!" });
 
 			if (ModelState.IsValid)
 			{
-				product.RegistrationUser = adminId.Value;
+				product.RegistrationUser = userId.Value;
+				product.RegistrationUserRole = userRole;
 				product.RegistrationDate = DateTime.Now;
 				product.Active = true;
 
@@ -319,13 +347,15 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateProduct([FromBody] Product product)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var existing = await _dbContext.Product
 				.Include(p => p.SubMenuCategory).ThenInclude(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
-				.FirstOrDefaultAsync(p => p.Id == product.Id && p.SubMenuCategory.MenuCategory.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(p => p.Id == product.Id && p.SubMenuCategory.MenuCategory.Cafe.Id == cafeId);
 
 			if (existing == null)
 				return Json(new { success = false, message = "Ürün bulunamadı veya yetkiniz yok." });
@@ -339,7 +369,8 @@ namespace ProjectCafeWeb.Controllers
 				existing.DiscountRate = product.DiscountRate;
 				existing.MenuCategoryId = product.MenuCategoryId;
 				existing.SubMenuCategoryId = product.SubMenuCategoryId;
-				existing.CorrectionUser = adminId.Value;
+				existing.CorrectionUser = userId.Value;
+				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
 				await _dbContext.SaveChangesAsync();
@@ -353,8 +384,10 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult UpdateStock([FromBody] JsonElement request)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var productId = request.GetProperty("id").GetInt32();
@@ -362,13 +395,14 @@ namespace ProjectCafeWeb.Controllers
 
 			var product = _dbContext.Product
 				.Include(p => p.SubMenuCategory).ThenInclude(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
-				.FirstOrDefault(p => p.Id == productId && p.SubMenuCategory.MenuCategory.Cafe.AdminId == adminId);
+				.FirstOrDefault(p => p.Id == productId && p.SubMenuCategory.MenuCategory.Cafe.Id == cafeId);
 
 			if (product == null)
 				return Json(new { success = false, message = "Ürün bulunamadı veya yetkiniz yok." });
 
 			product.Stock = stockStatus;
-			product.CorrectionUser = adminId.Value;
+			product.CorrectionUser = userId.Value;
+			product.CorrectionUserRole = userRole;
 			product.CorrectionDate = DateTime.Now;
 
 			_dbContext.SaveChanges();
@@ -379,21 +413,24 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult DeleteProduct([FromBody] JsonElement request)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var productId = request.GetProperty("id").GetInt32();
 
 			var product = _dbContext.Product
 				.Include(p => p.SubMenuCategory).ThenInclude(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
-				.FirstOrDefault(p => p.Id == productId && p.SubMenuCategory.MenuCategory.Cafe.AdminId == adminId);
+				.FirstOrDefault(p => p.Id == productId && p.SubMenuCategory.MenuCategory.Cafe.Id == cafeId);
 
 			if (product == null)
 				return Json(new { success = false, message = "Ürün bulunamadı veya yetkiniz yok." });
 
 			product.Active = false;
-			product.CorrectionUser = adminId.Value;
+			product.CorrectionUser = userId.Value;
+			product.CorrectionUserRole = userRole;
 			product.CorrectionDate = DateTime.Now;
 
 			_dbContext.SaveChanges();

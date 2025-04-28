@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using ProjectCafeDataAccess;
 using ProjectCafeEntities;
 using ProjectCafeWeb.Attributes;
@@ -11,21 +12,20 @@ namespace ProjectCafeWeb.Controllers
 	[Authorize]
 	public class ProfileController : BaseController
 	{
-		private readonly ProjectCafeDbContext _dbContext;
-
-		public ProfileController(ProjectCafeDbContext dbContext)
+		public ProfileController(ProjectCafeDbContext dbContext) : base(dbContext)
 		{
-			_dbContext = dbContext;
 		}
 
 		public IActionResult MyProfile()
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
-				return RedirectToAction("SignIn", "Login");
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
+				return Unauthorized();
 
 			var admin = _dbContext.Admin
-				.Where(mc => mc.Active && mc.Id == adminId)
+				.Where(mc => mc.Active && mc.Id == userId)
 				.ToList();
 
 			return View(admin);
@@ -34,8 +34,9 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateAdmin([FromBody] Admin admin)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			if (userId == null)
 				return Unauthorized();
 
 			var existing = await _dbContext.Admin
@@ -51,7 +52,8 @@ namespace ProjectCafeWeb.Controllers
 				existing.Image = admin.Image;
 				existing.Email = admin.Email;
 				existing.Password = admin.Password;
-				existing.CorrectionUser = adminId.Value;
+				existing.CorrectionUser = userId.Value;
+				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
 				await _dbContext.SaveChangesAsync();
@@ -63,12 +65,14 @@ namespace ProjectCafeWeb.Controllers
 		[AuthorizeWithPermission("ViewWorker")]
 		public IActionResult WorkerProfile()
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
-				return RedirectToAction("SignIn", "Login");
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
+				return Unauthorized();
 
 			List<Worker> workers = _dbContext.Worker.Include(mc => mc.Cafe)
-				.Where(mc => mc.Active && mc.Cafe.AdminId == adminId)
+				.Where(mc => mc.Active && mc.Cafe.Id == cafeId)
 				.ToList();
 
 			return View(workers);
@@ -78,22 +82,25 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> AddWorker([FromBody] Worker worker)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			var cafeId = _dbContext.Cafe
-				.Where(c => c.AdminId == adminId)
+			var cafeIds = _dbContext.Cafe
+				.Where(c => c.Id == cafeId)
 				.Select(c => c.Id)
 				.FirstOrDefault();
 
-			if (cafeId == 0)
+			if (cafeIds == 0)
 				return Json(new { success = false, message = "Kafe bulunamadı!" });
 
 			if (ModelState.IsValid)
 			{
-				worker.CafeId = cafeId;
-				worker.RegistrationUser = adminId.Value;
+				worker.CafeId = cafeIds;
+				worker.RegistrationUser = userId.Value;
+				worker.RegistrationUserRole = userRole;
 				worker.RegistrationDate = DateTime.Now;
 
 				if (worker.RolePermissions == null)
@@ -111,13 +118,15 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateWorker([FromBody] Worker worker)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var existing = await _dbContext.Worker
 				.Include(mc => mc.Cafe)
-				.FirstOrDefaultAsync(mc => mc.Id == worker.Id && mc.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(mc => mc.Id == worker.Id && mc.Cafe.Id == cafeId);
 
 			if (existing == null)
 				return Json(new { success = false, message = "Güncellenecek çalışan bulunamadı!" });
@@ -130,7 +139,8 @@ namespace ProjectCafeWeb.Controllers
 				existing.Email = worker.Email;
 				existing.Password = worker.Password;
 				existing.RolePermissions = worker.RolePermissions ?? "[]";
-				existing.CorrectionUser = adminId.Value;
+				existing.CorrectionUser = userId.Value;
+				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
 				await _dbContext.SaveChangesAsync();
@@ -143,21 +153,24 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult DeleteWorker([FromBody] JsonElement request)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var workerId = request.GetProperty("id").GetInt32();
 
 			var worker = _dbContext.Worker
 				.Include(mc => mc.Cafe)
-				.FirstOrDefault(mc => mc.Id == workerId && mc.Cafe.AdminId == adminId);
+				.FirstOrDefault(mc => mc.Id == workerId && mc.Cafe.Id == cafeId);
 
 			if (worker == null)
 				return Json(new { success = false, message = "Çalışan bulunamadı veya yetkiniz yok." });
 
 			worker.Active = false;
-			worker.CorrectionUser = adminId.Value;
+			worker.CorrectionUser = userId.Value;
+			worker.CorrectionUserRole = userRole;
 			worker.CorrectionDate = DateTime.Now;
 			_dbContext.SaveChanges();
 
@@ -167,14 +180,16 @@ namespace ProjectCafeWeb.Controllers
 		[AuthorizeWithPermission("CafeProfile")]
 		public IActionResult CafeProfile()
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			List<Cafe> cafes = _dbContext.Cafe
 				.Include(c => c.Sections)
 				.ThenInclude(s => s.Tables)
-				.Where(c => c.Active && c.AdminId == adminId)
+				.Where(c => c.Active && c.Id == cafeId)
 				.ToList();
 
 			return View(cafes);
@@ -184,12 +199,14 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public async Task<IActionResult> UpdateCafe([FromBody] Cafe cafe)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var existingCafe = await _dbContext.Cafe
-				.FirstOrDefaultAsync(c => c.Id == cafe.Id && c.AdminId == adminId);
+				.FirstOrDefaultAsync(c => c.Id == cafe.Id && c.Id == cafeId);
 
 			if (existingCafe == null)
 				return Json(new { success = false, message = "Kafe bulunamadı veya yetkiniz yok." });
@@ -199,7 +216,8 @@ namespace ProjectCafeWeb.Controllers
 				existingCafe.Name = cafe.Name;
 				existingCafe.Image = cafe.Image;
 				existingCafe.Location = cafe.Location;
-				existingCafe.CorrectionUser = adminId.Value;
+				existingCafe.CorrectionUser = userId.Value;
+				existingCafe.CorrectionUserRole = userRole;
 				existingCafe.CorrectionDate = DateTime.Now;
 
 				await _dbContext.SaveChangesAsync();
@@ -210,24 +228,27 @@ namespace ProjectCafeWeb.Controllers
 
 		[AuthorizeWithPermission("AddSection")]
 		[HttpPost]
-		public async Task<IActionResult> AddSection([FromBody] Section section)
+		public async Task<IActionResult> AddSection([FromBody] ProjectCafeEntities.Section section)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			var cafeId = _dbContext.Cafe
-				.Where(c => c.AdminId == adminId)
+			var cafeIds = _dbContext.Cafe
+				.Where(c => c.Id == cafeId)
 				.Select(c => c.Id)
 				.FirstOrDefault();
 
-			if (cafeId == 0)
+			if (cafeIds == 0)
 				return Json(new { success = false, message = "Bölüm bulunamadı!" });
 
 			if (ModelState.IsValid)
 			{
-				section.CafeId = cafeId;
-				section.RegistrationUser = adminId.Value;
+				section.CafeId = cafeIds;
+				section.RegistrationUser = userId.Value;
+				section.RegistrationUserRole = userRole;
 				section.RegistrationDate = DateTime.Now;
 				section.Active = true;
 
@@ -240,15 +261,17 @@ namespace ProjectCafeWeb.Controllers
 
 		[AuthorizeWithPermission("UpdateSection")]
 		[HttpPost]
-		public async Task<IActionResult> UpdateSection([FromBody] Section section)
+		public async Task<IActionResult> UpdateSection([FromBody] ProjectCafeEntities.Section section)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var existing = await _dbContext.Section
 				.Include(s => s.Cafe)
-				.FirstOrDefaultAsync(s => s.Id == section.Id && s.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(s => s.Id == section.Id && s.Cafe.Id == cafeId);
 
 			if (existing == null)
 				return Json(new { success = false, message = "Bölüm bulunamadı veya yetkiniz yok." });
@@ -257,7 +280,8 @@ namespace ProjectCafeWeb.Controllers
 			{
 				existing.Name = section.Name;
 				existing.Image = section.Image;
-				existing.CorrectionUser = adminId.Value;
+				existing.CorrectionUser = userId.Value;
+				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
 				await _dbContext.SaveChangesAsync();
@@ -270,8 +294,10 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult DeleteSection([FromBody] JsonElement request)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			int sectionId = request.GetProperty("id").GetInt32();
@@ -279,19 +305,21 @@ namespace ProjectCafeWeb.Controllers
 			var section = _dbContext.Section
 				.Include(s => s.Cafe)
 				.Include(sc => sc.Tables)
-				.FirstOrDefault(s => s.Id == sectionId && s.Cafe.AdminId == adminId);
+				.FirstOrDefault(s => s.Id == sectionId && s.Cafe.Id == cafeId);
 
 			if (section == null)
 				return Json(new { success = false, message = "Bölüm bulunamadı veya yetkiniz yok." });
 
 			section.Active = false;
-			section.CorrectionUser = adminId.Value;
+			section.CorrectionUser = userId.Value;
+			section.CorrectionUserRole = userRole;
 			section.CorrectionDate = DateTime.Now;
 
-			foreach (var table in section.Tables ?? new List<Table>())
+			foreach (var table in (section.Tables ?? new List<ProjectCafeEntities.Table>()))
 			{
 				table.Active = false;
-				table.CorrectionUser = adminId.Value;
+				table.CorrectionUser = userId.Value;
+				table.CorrectionUserRole = userRole;
 				table.CorrectionDate = DateTime.Now;
 			}
 
@@ -302,22 +330,25 @@ namespace ProjectCafeWeb.Controllers
 
 		[AuthorizeWithPermission("AddTable")]
 		[HttpPost]
-		public async Task<IActionResult> AddTable([FromBody] Table table)
+		public async Task<IActionResult> AddTable([FromBody] ProjectCafeEntities.Table table)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var section = await _dbContext.Section
 				.Include(s => s.Cafe)
-				.FirstOrDefaultAsync(s => s.Id == table.SectionId && s.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(s => s.Id == table.SectionId && s.Cafe.Id == cafeId);
 
 			if (section == null)
 				return Json(new { success = false, message = "Yetkiniz olmayan bir bölüme masa ekleyemezsiniz." });
 
 			if (ModelState.IsValid)
 			{
-				table.RegistrationUser = adminId.Value;
+				table.RegistrationUser = userId.Value;
+				table.RegistrationUserRole = userRole;
 				table.RegistrationDate = DateTime.Now;
 				table.Active = true;
 
@@ -331,16 +362,18 @@ namespace ProjectCafeWeb.Controllers
 
 		[AuthorizeWithPermission("UpdateTable")]
 		[HttpPost]
-		public async Task<IActionResult> UpdateTable([FromBody] Table table)
+		public async Task<IActionResult> UpdateTable([FromBody] ProjectCafeEntities.Table table)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var existing = await _dbContext.Table
 				.Include(t => t.Section)
 				.ThenInclude(s => s.Cafe)
-				.FirstOrDefaultAsync(t => t.Id == table.Id && t.Section.Cafe.AdminId == adminId);
+				.FirstOrDefaultAsync(t => t.Id == table.Id && t.Section.Cafe.Id == cafeId);
 
 			if (existing == null)
 				return Json(new { success = false, message = "Masa bulunamadı veya yetkiniz yok." });
@@ -348,7 +381,8 @@ namespace ProjectCafeWeb.Controllers
 			if (ModelState.IsValid)
 			{
 				existing.Name = table.Name;
-				existing.CorrectionUser = adminId.Value;
+				existing.CorrectionUser = userId.Value;
+				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
 				await _dbContext.SaveChangesAsync();
@@ -361,8 +395,10 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult DeleteTable([FromBody] JsonElement request)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			int tableId = request.GetProperty("id").GetInt32();
@@ -370,13 +406,14 @@ namespace ProjectCafeWeb.Controllers
 			var table = _dbContext.Table
 				.Include(t => t.Section)
 				.ThenInclude(s => s.Cafe)
-				.FirstOrDefault(t => t.Id == tableId && t.Section.Cafe.AdminId == adminId);
+				.FirstOrDefault(t => t.Id == tableId && t.Section.Cafe.Id == cafeId);
 
 			if (table == null)
 				return Json(new { success = false, message = "Masa bulunamadı veya yetkiniz yok." });
 
 			table.Active = false;
-			table.CorrectionUser = adminId.Value;
+			table.CorrectionUser = userId.Value;
+			table.CorrectionUserRole = userRole;
 			table.CorrectionDate = DateTime.Now;
 
 			_dbContext.SaveChanges();

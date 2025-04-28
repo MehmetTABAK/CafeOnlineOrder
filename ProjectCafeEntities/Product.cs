@@ -19,8 +19,10 @@ namespace ProjectCafeEntities
 		public double? DiscountRate { get; set; }
 		public bool Active { get; set; }
 		public int RegistrationUser { get; set; }
+		public string RegistrationUserRole { get; set; }
 		public DateTime RegistrationDate { get; set; }
 		public int? CorrectionUser { get; set; }
+		public string? CorrectionUserRole { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 
 		public virtual SubMenuCategory? SubMenuCategory { get; set; }

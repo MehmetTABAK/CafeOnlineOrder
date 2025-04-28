@@ -12,24 +12,23 @@ namespace ProjectCafeWeb.Controllers
 	[Authorize]
 	public class TableController : BaseController
 	{
-		private readonly ProjectCafeDbContext _dbContext;
-
-		public TableController(ProjectCafeDbContext dbContext)
+		public TableController(ProjectCafeDbContext dbContext) : base(dbContext)
 		{
-			_dbContext = dbContext;
 		}
 
 		[AuthorizeWithPermission("ViewTable")]
 		public IActionResult Table()
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
-				return RedirectToAction("SignIn", "Login");
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
+				return Unauthorized();
 
 			List<Table> tables = _dbContext.Table
 				.Include(t => t.Section)
 				.Include(t => t.Orders)
-				.Where(t => t.Active && t.Section.Cafe.AdminId == adminId)
+				.Where(t => t.Active && t.Section.Cafe.Id == cafeId)
 				.ToList();
 
 			return View(tables);
@@ -74,6 +73,12 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult PaySelectedOrdersSplit(List<int> orderIds, double cardAmount, double cashAmount)
 		{
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
+				return Unauthorized();
+
 			var orders = _dbContext.Order
 				.Include(o => o.Product)
 				.Where(o => orderIds.Contains(o.Id) && o.Status != 4)
@@ -94,9 +99,10 @@ namespace ProjectCafeWeb.Controllers
 					TableId = tableId,
 					Method = 1,
 					TotalPrice = cardAmount,
-					RegistrationDate = DateTime.Now,
 					Active = true,
-					RegistrationUser = GetCurrentAdminId() ?? 0
+					RegistrationUser = userId.Value,
+					RegistrationUserRole = userRole,
+					RegistrationDate = DateTime.Now
 				});
 			}
 
@@ -107,9 +113,10 @@ namespace ProjectCafeWeb.Controllers
 					TableId = tableId,
 					Method = 2,
 					TotalPrice = cashAmount,
-					RegistrationDate = DateTime.Now,
 					Active = true,
-					RegistrationUser = GetCurrentAdminId() ?? 0
+					RegistrationUser = userId.Value,
+					RegistrationUserRole = userRole,
+					RegistrationDate = DateTime.Now
 				});
 			}
 
@@ -122,6 +129,12 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult CompletePayment(int tableId, byte method)
 		{
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
+				return Unauthorized();
+
 			var unpaidOrders = _dbContext.Order
 				.Include(o => o.Product)
 				.Where(o => o.TableId == tableId && o.Status != 4 && o.Active)
@@ -137,9 +150,10 @@ namespace ProjectCafeWeb.Controllers
 				TableId = tableId,
 				Method = method,
 				TotalPrice = total,
-				RegistrationDate = DateTime.Now,
 				Active = true,
-				RegistrationUser = GetCurrentAdminId() ?? 0
+				RegistrationUser = userId.Value,
+				RegistrationUserRole = userRole,
+				RegistrationDate = DateTime.Now
 			});
 
 			foreach (var order in unpaidOrders)
@@ -152,8 +166,10 @@ namespace ProjectCafeWeb.Controllers
 		//[HttpPost]
 		//public IActionResult UpdateOrderStatus(int orderId)
 		//{
-		//	var adminId = GetCurrentAdminId();
-		//	if (adminId == null)
+		//	var userId = GetCurrentUserId();
+		//var userRole = GetCurrentUserRole();
+		//var cafeId = GetCurrentCafeId();
+		//	if (userId == null || cafeId == null)
 		//		return Unauthorized();
 
 		//	var order = _dbContext.Order
@@ -236,15 +252,18 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult MoveSelectedOrders(int toId, List<int> orderIds)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var orders = _dbContext.Order.Where(o => orderIds.Contains(o.Id)).ToList();
 			foreach (var order in orders)
 			{
 				order.TableId = toId;
-				order.CorrectionUser = adminId;
+				order.CorrectionUser = userId.Value;
+				order.CorrectionUserRole = userRole;
 				order.CorrectionDate = DateTime.Now;
 			}
 			_dbContext.SaveChanges();
@@ -255,15 +274,18 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult MoveTable(int fromId, int toId)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var orders = _dbContext.Order.Where(o => o.TableId == fromId).ToList();
 			foreach (var order in orders)
 			{
 				order.TableId = toId;
-				order.CorrectionUser = adminId;
+				order.CorrectionUser = userId.Value;
+				order.CorrectionUserRole = userRole;
 				order.CorrectionDate = DateTime.Now;
 			}
 			_dbContext.SaveChanges();
@@ -274,8 +296,10 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public IActionResult CloseTable([FromBody] Table table)
 		{
-			var adminId = GetCurrentAdminId();
-			if (adminId == null)
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
+			if (userId == null || cafeId == null)
 				return Unauthorized();
 
 			var tableId = _dbContext.Table
@@ -289,7 +313,8 @@ namespace ProjectCafeWeb.Controllers
 			foreach (var order in tableId.Orders)
 			{
 				order.Status = 5;
-				order.CorrectionUser = adminId;
+				order.CorrectionUser = userId.Value;
+				order.CorrectionUserRole = userRole;
 				order.CorrectionDate = DateTime.Now;
 			}
 
@@ -302,7 +327,11 @@ namespace ProjectCafeWeb.Controllers
 		//[HttpPost]
 		//public JsonResult CancelOrders(List<int> orderIds)
 		//{
-		//	var adminId = GetCurrentAdminId();
+		//	var userId = GetCurrentUserId();
+		//var userRole = GetCurrentUserRole();
+		//var cafeId = GetCurrentCafeId();
+		//	if (userId == null || cafeId == null)
+		//		return Unauthorized();
 
 		//	if (orderIds == null || !orderIds.Any())
 		//		return Json(new { success = false });
@@ -358,7 +387,9 @@ namespace ProjectCafeWeb.Controllers
 		[HttpPost]
 		public JsonResult AddOrders(List<int> productIds, int tableId)
 		{
-			var adminId = GetCurrentAdminId();
+			var userId = GetCurrentUserId();
+			var userRole = GetCurrentUserRole();
+			var cafeId = GetCurrentCafeId();
 
 			foreach (var productId in productIds)
 			{
@@ -368,7 +399,8 @@ namespace ProjectCafeWeb.Controllers
 					TableId = tableId,
 					Status = 3,
 					Active = true,
-					RegistrationUser = adminId,
+					RegistrationUser = userId.Value,
+					RegistrationUserRole = userRole,
 					RegistrationDate = DateTime.Now
 				};
 				_dbContext.Order.Add(order);
