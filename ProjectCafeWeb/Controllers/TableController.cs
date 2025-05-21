@@ -163,91 +163,6 @@ namespace ProjectCafeWeb.Controllers
 			return Ok();
 		}
 
-		//[HttpPost]
-		//public IActionResult UpdateOrderStatus(int orderId)
-		//{
-		//	var userId = GetCurrentUserId();
-		//var userRole = GetCurrentUserRole();
-		//var cafeId = GetCurrentCafeId();
-		//	if (userId == null || cafeId == null)
-		//		return Unauthorized();
-
-		//	var order = _dbContext.Order
-		//		.Include(o => o.Product)
-		//		.FirstOrDefault(o => o.Id == orderId);
-
-		//	if (order == null || order.Status == 3) return BadRequest();
-
-		//	order.Status = 3;
-
-		//	var payments = _dbContext.Payment
-		//		.Where(p => p.TableId == order.TableId && p.Active)
-		//		.OrderByDescending(p => p.RegistrationDate)
-		//		.ToList();
-
-		//	double remainingRefund = order.Product?.Price ?? 0;
-
-		//	foreach (var payment in payments)
-		//	{
-		//		if (remainingRefund == 0) break;
-
-		//		if (payment.TotalPrice <= remainingRefund)
-		//		{
-		//			remainingRefund -= payment.TotalPrice;
-		//			payment.TotalPrice = 0;
-		//			payment.Active = false;
-		//			payment.CorrectionUser = adminId;
-		//			payment.CorrectionDate = DateTime.Now;
-		//		}
-		//		else
-		//		{
-		//			payment.TotalPrice -= remainingRefund;
-		//			remainingRefund = 0;
-		//			payment.CorrectionUser = adminId;
-		//			payment.CorrectionDate = DateTime.Now;
-		//		}
-		//	}
-
-		//	_dbContext.SaveChanges();
-		//	return Ok();
-		//}
-
-		//[HttpPost]
-		//public IActionResult CancelAllPaidOrders(int tableId)
-		//{
-		//	var adminId = GetCurrentAdminId();
-		//	if (adminId == null)
-		//		return Unauthorized();
-
-		//	var paidOrders = _dbContext.Order
-		//		.Where(o => o.TableId == tableId && o.Status == 4 && o.Active)
-		//		.ToList();
-
-		//	if (!paidOrders.Any())
-		//		return Ok();
-
-		//	foreach (var order in paidOrders)
-		//	{
-		//		order.Status = 3;
-		//	}
-
-		//	var latestActivePayment = _dbContext.Payment
-		//		.Where(p => p.TableId == tableId && p.Active)
-		//		.OrderByDescending(p => p.RegistrationDate)
-		//		.FirstOrDefault();
-
-		//	if (latestActivePayment != null)
-		//	{
-		//		latestActivePayment.Active = false;
-		//		latestActivePayment.TotalPrice = 0;
-		//		latestActivePayment.CorrectionUser = adminId;
-		//		latestActivePayment.CorrectionDate = DateTime.Now;
-		//	}
-
-		//	_dbContext.SaveChanges();
-		//	return Ok();
-		//}
-
 		[AuthorizeWithPermission("MoveTableAndOrders")]
 		[HttpPost]
 		public IActionResult MoveSelectedOrders(int toId, List<int> orderIds)
@@ -323,64 +238,169 @@ namespace ProjectCafeWeb.Controllers
 			return Json(new { success = true, message = "Masa başarıyla kapatıldı." });
 		}
 
-		//[AuthorizeWithPermission("CancelOrders")]
-		//[HttpPost]
-		//public JsonResult CancelOrders(List<int> orderIds)
-		//{
-		//	var userId = GetCurrentUserId();
-		//var userRole = GetCurrentUserRole();
-		//var cafeId = GetCurrentCafeId();
-		//	if (userId == null || cafeId == null)
-		//		return Unauthorized();
+		[AuthorizeWithPermission("ReturnOrders")]
+		[HttpPost]
+		public JsonResult ReturnOrders(List<int> orderIds, int tableId, byte method)
+		{
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var cafeId = GetCurrentCafeId();
 
-		//	if (orderIds == null || !orderIds.Any())
-		//		return Json(new { success = false });
+            if (orderIds == null || !orderIds.Any())
+                return Json(new { success = false });
 
-		//	var orders = _dbContext.Order.Where(o => orderIds.Contains(o.Id)).ToList();
+            var orders = _dbContext.Order
+                .Include(o => o.Product)
+                .Where(o => orderIds.Contains(o.Id))
+                .ToList();
 
-		//	foreach (var order in orders)
-		//	{
-		//		order.Active = false;
-		//		order.CorrectionUser = adminId;
-		//		order.CorrectionDate = DateTime.Now;
-		//	}
+            foreach (var order in orders)
+            {
+                order.Status = 6;
+                order.CorrectionUser = userId.Value;
+                order.CorrectionUserRole = userRole;
+                order.CorrectionDate = DateTime.Now;
+            }
 
-		//	_dbContext.SaveChanges();
+            var total = orders.Sum(o => o.Product.Price);
 
-		//	return Json(new { success = true });
-		//}
+            _dbContext.Payment.Add(new Payment
+            {
+                TableId = tableId,
+                Method = method,
+                TotalPrice = total,
+                Active = true,
+                RegistrationUser = userId.Value,
+                RegistrationUserRole = userRole,
+                RegistrationDate = DateTime.Now
+            });
 
-		[HttpGet]
+            _dbContext.SaveChanges();
+
+            return Json(new { success = true });
+        }
+
+        [AuthorizeWithPermission("CancelOrders")]
+        [HttpPost]
+        public JsonResult CancelOrders(List<int> orderIds)
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var cafeId = GetCurrentCafeId();
+
+            if (orderIds == null || !orderIds.Any())
+                return Json(new { success = false });
+
+            var orders = _dbContext.Order
+				.Include(o => o.Product)
+				.ThenInclude(p => p.MenuCategory)
+				.Where(o => orderIds.Contains(o.Id) && o.Active && o.Product != null && o.Product.MenuCategory.CafeId == cafeId)
+				.ToList();
+
+            foreach (var order in orders)
+            {
+                order.Status = 7;
+                order.CorrectionUser = userId.Value;
+                order.CorrectionUserRole = userRole;
+                order.CorrectionDate = DateTime.Now;
+
+                // Eğer ürün stok takibindeyse, stok adedini geri ekle
+                var product = order.Product;
+                if (product != null && product.StockCount.HasValue)
+                {
+                    product.StockCount += 1;
+                    product.Stock = true; // stok tekrar mevcut hale gelebilir
+                }
+            }
+
+            _dbContext.SaveChanges();
+
+            return Json(new { success = true });
+        }
+
+        [AuthorizeWithPermission("BonusOrders")]
+        [HttpPost]
+        public JsonResult BonusOrders(List<int> orderIds, int tableId, byte method)
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var cafeId = GetCurrentCafeId();
+
+            if (orderIds == null || !orderIds.Any())
+                return Json(new { success = false });
+
+            var orders = _dbContext.Order
+                .Include(o => o.Product)
+                .Where(o => orderIds.Contains(o.Id))
+                .ToList();
+
+            foreach (var order in orders)
+            {
+                order.Status = 8;
+                order.CorrectionUser = userId.Value;
+                order.CorrectionUserRole = userRole;
+                order.CorrectionDate = DateTime.Now;
+            }
+
+            var total = orders.Sum(o => o.Product.Price);
+
+            _dbContext.Payment.Add(new Payment
+            {
+                TableId = tableId,
+                Method = method,
+                TotalPrice = total,
+                Active = true,
+                RegistrationUser = userId.Value,
+                RegistrationUserRole = userRole,
+                RegistrationDate = DateTime.Now
+            });
+
+            _dbContext.SaveChanges();
+
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
 		public JsonResult GetMenuCategories()
 		{
-			var categories = _dbContext.MenuCategory
-				.Where(x => x.Active)
+            var cafeId = GetCurrentCafeId();
+
+            var categories = _dbContext.MenuCategory
+				.Where(x => x.Active && x.CafeId == cafeId)
 				.Select(x => new { x.Id, x.CategoryName })
 				.ToList();
 
-			return Json(categories);
+            return Json(categories);
 		}
 
-		[HttpGet]
+        [HttpGet]
 		public JsonResult GetSubMenuCategories(int categoryId)
 		{
-			var subCategories = _dbContext.SubMenuCategory
-				.Where(x => x.MenuCategoryId == categoryId && x.Active)
+            var cafeId = GetCurrentCafeId();
+
+            var subCategories = _dbContext.SubMenuCategory
+				.Where(x => x.MenuCategoryId == categoryId && x.Active && x.MenuCategory.CafeId == cafeId)
 				.Select(x => new { x.Id, x.SubCategoryName })
 				.ToList();
 
-			return Json(subCategories);
+            return Json(subCategories);
 		}
 
 		[HttpGet]
 		public JsonResult GetProducts(int subCategoryId)
 		{
-			var products = _dbContext.Product
-				.Where(x => x.SubMenuCategoryId == subCategoryId && x.Active && x.Stock)
-				.Select(x => new { x.Id, x.Name, x.Price })
+            var cafeId = GetCurrentCafeId();
+
+            var products = _dbContext.Product
+				.Where(x =>
+					x.SubMenuCategoryId == subCategoryId &&
+					x.Active && x.Stock &&
+					x.MenuCategory != null &&
+					x.MenuCategory.CafeId == cafeId)
+				.Select(x => new { x.Id, x.Name, x.Price, x.StockCount })
 				.ToList();
 
-			return Json(products);
+            return Json(products);
 		}
 
 		[AuthorizeWithPermission("AddOrders")]
@@ -393,7 +413,24 @@ namespace ProjectCafeWeb.Controllers
 
 			foreach (var productId in productIds)
 			{
-				var order = new Order
+                var product = _dbContext.Product.FirstOrDefault(x => x.Id == productId && x.Active && x.MenuCategory.CafeId == cafeId);
+
+                if (product == null)
+                    continue;
+
+                // Stok varsa ve sayısı 0'dan büyükse azalt
+                if (product.StockCount.HasValue && product.StockCount > 0)
+                {
+                    product.StockCount -= 1;
+
+                    // Eğer stok sıfıra düşerse stok kalmadı anlamında Stock'u false yap
+                    if (product.StockCount == 0)
+                    {
+                        product.Stock = false;
+                    }
+                }
+
+                var order = new Order
 				{
 					ProductId = productId,
 					TableId = tableId,
@@ -406,7 +443,7 @@ namespace ProjectCafeWeb.Controllers
 				_dbContext.Order.Add(order);
 			}
 
-			_dbContext.SaveChanges();
+            _dbContext.SaveChanges();
 			return Json(new { success = true });
 		}
 

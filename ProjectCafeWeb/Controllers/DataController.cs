@@ -50,7 +50,9 @@ namespace ProjectCafeWeb.Controllers
 			if (cafeIds == 0)
 				return Json(new { success = false, message = "Kafe bulunamadı!" });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(menuCategory.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				menuCategory.CafeId = cafeIds;
 				menuCategory.RegistrationUser = userId.Value;
@@ -81,7 +83,9 @@ namespace ProjectCafeWeb.Controllers
 			if (existing == null)
 				return Json(new { success = false, message = "Güncellenecek menü bulunamadı!" });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(menuCategory.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				existing.CategoryName = menuCategory.CategoryName;
 				existing.CategoryImage = menuCategory.CategoryImage;
@@ -188,7 +192,9 @@ namespace ProjectCafeWeb.Controllers
 			if (menuCategory == null)
 				return Json(new { success = false, message = "Yetkiniz olmayan bir menüye alt menü ekleyemezsiniz." });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(subMenuCategory.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				subMenuCategory.RegistrationUser = userId.Value;
 				subMenuCategory.RegistrationUserRole = userRole;
@@ -220,7 +226,9 @@ namespace ProjectCafeWeb.Controllers
 			if (existing == null)
 				return Json(new { success = false, message = "Alt menü bulunamadı veya yetkiniz yok." });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(subMenuCategory.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				existing.SubCategoryName = subMenuCategory.SubCategoryName;
 				existing.SubCategoryImage = subMenuCategory.SubCategoryImage;
@@ -328,7 +336,9 @@ namespace ProjectCafeWeb.Controllers
 			if (subCategory == null)
 				return Json(new { success = false, message = "Yetkisiz alt menü, ürün eklenemedi!" });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(product.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				product.RegistrationUser = userId.Value;
 				product.RegistrationUserRole = userRole;
@@ -360,10 +370,13 @@ namespace ProjectCafeWeb.Controllers
 			if (existing == null)
 				return Json(new { success = false, message = "Ürün bulunamadı veya yetkiniz yok." });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(product.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				existing.Name = product.Name;
 				existing.Price = product.Price;
+				existing.StockCount = product.StockCount;
 				existing.Image = product.Image;
 				existing.IsThereDiscount = product.IsThereDiscount;
 				existing.DiscountRate = product.DiscountRate;

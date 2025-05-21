@@ -1859,3 +1859,15 @@ input.form-control {
 .bg-white {
     background-color: #FFFFFF !important; /* Beyaz */
 }
+
+.bg-light-return {
+    background-color: #f8d7da !important;
+}
+
+.bg-light-cancel {
+    background-color: #f9a789 !important;
+}
+
+.bg-light-bonus {
+    background-color: #f8d789 !important;
+}

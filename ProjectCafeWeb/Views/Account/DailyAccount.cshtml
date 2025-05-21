@@ -14,6 +14,7 @@
             1 => "Kart",
             2 => "Nakit",
             3 => "İade",
+            4 => "İkram",
             _ => "-"
         };
     }
@@ -127,8 +128,8 @@
                             <th>Ücret</th>
                             <th>Ödeme Yöntemi</th>
                             <th>İşlem Yapan Kişi</th>
-                            <th>Düzenleyen Kişi</th>
-                            <th>Düzenlediği Tarih</th>
+                           @*  <th>Düzenleyen Kişi</th>
+                            <th>Düzenlediği Tarih</th> *@
                             <th>Kayıt Tarihi</th>
                         </tr>
                     </thead>
@@ -141,8 +142,8 @@
                                 <td>@item.TotalPrice.ToString("N2") ₺</td>
                                 <td>@item.PaymentMethod</td>
                                 <td>@item.RegistrationUserFullName</td>
-                                <td>@item.CorrectionUserFullName</td>
-                                <td>@item.CorrectionDate</td>
+                                @* <td>@item.CorrectionUserFullName</td>
+                                <td>@item.CorrectionDate</td> *@
                                 <td>@item.Date</td>
                             </tr>
                         }

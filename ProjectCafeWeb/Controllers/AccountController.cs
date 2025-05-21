@@ -7,21 +7,26 @@ using ProjectCafeWeb.ViewModels;
 
 namespace ProjectCafeWeb.Controllers
 {
-	public class AccountController : Controller
+	public class AccountController : BaseController
 	{
-		private readonly ProjectCafeDbContext _dbContext;
+        public AccountController(ProjectCafeDbContext dbContext) : base(dbContext)
+        {
+        }
 
-		public AccountController(ProjectCafeDbContext dbContext)
-		{
-			_dbContext = dbContext;
-		}
-
-		[AuthorizeWithPermission("ViewDailyAccount")]
+        [AuthorizeWithPermission("ViewDailyAccount")]
 		public IActionResult DailyAccount(DateTime? selectedDate)
 		{
-			var paymentsQuery = _dbContext.Payment
+            var cafeId = GetCurrentCafeId();
+            if (cafeId == null)
+                return Unauthorized();
+
+            var paymentsQuery = _dbContext.Payment
 				.Include(p => p.Table)
-				.Where(p => p.Active);
+                .ThenInclude(t => t.Section)
+				.Where(p => p.Active &&
+                        p.Table != null &&
+                        p.Table.Section != null &&
+                        p.Table.Section.CafeId == cafeId);
 
 			if (selectedDate.HasValue)
 			{
@@ -54,10 +59,10 @@ namespace ProjectCafeWeb.Controllers
 					RegistrationDate = item.RegistrationDate,
 					TableName = item.Table?.Name ?? "-",
 					TotalPrice = item.TotalPrice,
-					PaymentMethod = item.Method == 1 ? "Kart" : item.Method == 2 ? "Nakit" : "-",
+					PaymentMethod = item.Method == 1 ? "Kart" : item.Method == 2 ? "Nakit" : item.Method == 3 ? "İade" : item.Method == 4 ? "İkram" : "-",
 					RegistrationUserFullName = admins.ContainsKey(item.RegistrationUser) ? admins[item.RegistrationUser] : "-",
-					CorrectionUserFullName = item.CorrectionUser.HasValue && admins.ContainsKey(item.CorrectionUser.Value) ? admins[item.CorrectionUser.Value] : "-",
-					CorrectionDate = item.CorrectionDate?.ToString("dd.MM.yyyy HH:mm") ?? "-",
+					//CorrectionUserFullName = item.CorrectionUser.HasValue && admins.ContainsKey(item.CorrectionUser.Value) ? admins[item.CorrectionUser.Value] : "-",
+					//CorrectionDate = item.CorrectionDate?.ToString("dd.MM.yyyy HH:mm") ?? "-",
 					Date = item.RegistrationDate.ToString("dd.MM.yyyy")
 				}).ToList();
 

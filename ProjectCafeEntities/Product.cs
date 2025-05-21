@@ -15,6 +15,7 @@ namespace ProjectCafeEntities
 		public string? Image { get; set; }
 		public double Price { get; set; }
 		public bool Stock { get; set; }
+		public int? StockCount { get; set; }
 		public bool IsThereDiscount { get; set; }
 		public double? DiscountRate { get; set; }
 		public bool Active { get; set; }

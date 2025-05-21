@@ -65,6 +65,16 @@
                                         <span class="discount-price">@product.Price ₺</span>
                                     }
                                 </div>
+                                <div>
+                                    @if (product.StockCount != null)
+                                    {
+                                        <span class="discount-price">Stokta @product.StockCount tane var.</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="discount-price">Stok bilgisi girilmedi.</span>
+                                    }
+                                </div>
                                 <div class="d-flex justify-content-between gap-2 mt-3">
                                     @if (role == "Admin" || allowedPages.Contains("UpdateProduct"))
                                     {
@@ -76,6 +86,7 @@
                                             data-name="@product.Name"
                                             data-price="@product.Price"
                                             data-image="@product.Image"
+                                            data-stock-count="@product.StockCount"
                                             data-has-discount="@product.IsThereDiscount"
                                             data-discount="@product.DiscountRate"
                                             data-category="@category.CategoryName"
@@ -231,6 +242,9 @@
                     <h3 class="text-muted">Ürün Fiyatı:</h3>
                     <input type="text" placeholder="Buraya ürün fiyatını yazın..." class="form-control" required>
 
+                    <h3 class="text-muted">Ürün Stok Sayısı: (İsteğe Bağlı)</h3>
+                    <input type="text" placeholder="Buraya ürün stok sayısını yazın..." class="form-control">
+
                     <h3 class="text-muted">Üründe İndirim Var Mı:</h3>
                     <div class="radio-group">
                         <label>
@@ -252,28 +266,8 @@
         </div>
     </div>
 
-<!-- Modal Sonu -->
-<!-- Stok Durumu Değişiklik Onayı Modal'ı -->
-@* <div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmationModalLabel">Stok Durumu Güncelleme</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p id="confirmationMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" id="cancelButton" data-bs-dismiss="modal">Hayır</button>
-                <button type="button" class="btn btn-primary" id="confirmButton">Evet</button>
-            </div>
-        </div>
-    </div>
-</div> *@
-
-<input type="hidden" id="menuCategoryId">
-<input type="hidden" id="subMenuCategoryId">
+    <input type="hidden" id="menuCategoryId">
+    <input type="hidden" id="subMenuCategoryId">
 }
 
 <script>
@@ -297,6 +291,7 @@
             if (isEdit) {
                 document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value = this.getAttribute('data-name');
                 document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value = this.getAttribute('data-price');
+                document.querySelector('input[placeholder="Buraya ürün stok sayısını yazın..."]').value = this.getAttribute('data-stock-count');
                 const image = this.getAttribute('data-image');
                 if (image) document.getElementById('preview').src = image;
 
@@ -319,6 +314,7 @@
             } else {
                 document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value = "";
                 document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value = "";
+                document.querySelector('input[placeholder="Buraya ürün stok sayısını yazın..."]').value = "";
                 document.getElementById('preview').src = "";
                 document.querySelector('input[name="discount"][value="no"]').checked = true;
                 document.getElementById('discount-label').classList.add("discount-hidden");
@@ -337,6 +333,7 @@
 
         const name = document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value;
         const price = document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value;
+        const stockCount = document.querySelector('input[placeholder="Buraya ürün stok sayısını yazın..."]').value;
         const hasDiscount = document.querySelector('input[name="discount"]:checked').value === 'yes';
         const discount = hasDiscount ? document.getElementById('discount-amount').value : 0;
         const imageSrc = document.getElementById('preview').src;
@@ -348,6 +345,7 @@
             id: mode === 'edit' ? parseInt(id) : 0,
             name,
             price: parseFloat(price),
+            stockCount: stockCount || null,
             image: imageSrc,
             isThereDiscount: hasDiscount,
             discountRate: parseFloat(discount),
@@ -375,57 +373,6 @@
         })
         .catch(() => alert('Sunucu hatası oluştu.'));
     });
-
-    // Stok durumunu güncelle
-    // document.querySelectorAll('.stock-checkbox').forEach(checkbox => {
-    //     checkbox.addEventListener('change', function () {
-    //         const productId = this.getAttribute('data-id');
-    //         const isChecked = this.checked;
-    //         const confirmationMessage = isChecked
-    //             ? "Ürünü stoğa eklemek istediğinize emin misiniz?"
-    //             : "Ürünü stoktan kaldırmak istediğinize emin misiniz?";
-
-    //         const modal = new bootstrap.Modal(document.getElementById('confirmationModal'));
-    //         document.getElementById('confirmationMessage').innerText = confirmationMessage;
-
-    //         const confirmButton = document.getElementById('confirmButton');
-    //         const cancelButton = document.getElementById('cancelButton');
-
-    //         const updateStockStatus = () => {
-    //             fetch('/Data/UpdateStock', {
-    //                 method: 'POST',
-    //                 headers: {
-    //                     'Content-Type': 'application/json'
-    //                 },
-    //                 body: JSON.stringify({ id: parseInt(productId), stock: isChecked })
-    //             })
-    //             .then(response => response.json())
-    //             .then(data => {
-    //                 if (data.success) {
-    //                     checkbox.checked = isChecked;
-    //                     modal.hide();
-    //                 } else {
-    //                     alert('Stok durumu güncellenemedi.');
-    //                 }
-    //             })
-    //             .catch(error => alert('Bir hata oluştu.'));
-    //         };
-
-    //         confirmButton.removeEventListener('click', updateStockStatus);
-    //         confirmButton.addEventListener('click', updateStockStatus);
-
-    //         cancelButton.removeEventListener('click', () => {
-    //             checkbox.checked = !isChecked;
-    //             modal.hide();
-    //         });
-    //         cancelButton.addEventListener('click', () => {
-    //             checkbox.checked = !isChecked;
-    //             modal.hide();
-    //         });
-
-    //         modal.show();
-    //     });
-    // });
 
     // Stok durumunu güncelle (modal kaldırıldı, onay sorusu eklendi)
     document.querySelectorAll('.stock-checkbox').forEach(checkbox => {

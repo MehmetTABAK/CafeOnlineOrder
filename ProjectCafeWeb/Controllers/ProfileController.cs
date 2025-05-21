@@ -45,7 +45,9 @@ namespace ProjectCafeWeb.Controllers
 			if (existing == null)
 				return Json(new { success = false, message = "Güncellenecek admin bulunamadı!" });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(admin.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				existing.Firstname = admin.Firstname;
 				existing.Lastname = admin.Lastname;
@@ -96,7 +98,9 @@ namespace ProjectCafeWeb.Controllers
 			if (cafeIds == 0)
 				return Json(new { success = false, message = "Kafe bulunamadı!" });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(worker.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				worker.CafeId = cafeIds;
 				worker.RegistrationUser = userId.Value;
@@ -131,7 +135,9 @@ namespace ProjectCafeWeb.Controllers
 			if (existing == null)
 				return Json(new { success = false, message = "Güncellenecek çalışan bulunamadı!" });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(worker.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				existing.Firstname = worker.Firstname;
 				existing.Lastname = worker.Lastname;
@@ -211,7 +217,9 @@ namespace ProjectCafeWeb.Controllers
 			if (existingCafe == null)
 				return Json(new { success = false, message = "Kafe bulunamadı veya yetkiniz yok." });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(cafe.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				existingCafe.Name = cafe.Name;
 				existingCafe.Image = cafe.Image;
@@ -244,7 +252,9 @@ namespace ProjectCafeWeb.Controllers
 			if (cafeIds == 0)
 				return Json(new { success = false, message = "Bölüm bulunamadı!" });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(section.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				section.CafeId = cafeIds;
 				section.RegistrationUser = userId.Value;
@@ -276,7 +286,9 @@ namespace ProjectCafeWeb.Controllers
 			if (existing == null)
 				return Json(new { success = false, message = "Bölüm bulunamadı veya yetkiniz yok." });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(section.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				existing.Name = section.Name;
 				existing.Image = section.Image;
@@ -345,7 +357,9 @@ namespace ProjectCafeWeb.Controllers
 			if (section == null)
 				return Json(new { success = false, message = "Yetkiniz olmayan bir bölüme masa ekleyemezsiniz." });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(table.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				table.RegistrationUser = userId.Value;
 				table.RegistrationUserRole = userRole;
@@ -378,7 +392,9 @@ namespace ProjectCafeWeb.Controllers
 			if (existing == null)
 				return Json(new { success = false, message = "Masa bulunamadı veya yetkiniz yok." });
 
-			if (ModelState.IsValid)
+            ModelState.Remove(nameof(table.RegistrationUserRole));
+
+            if (ModelState.IsValid)
 			{
 				existing.Name = table.Name;
 				existing.CorrectionUser = userId.Value;

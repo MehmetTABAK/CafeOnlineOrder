@@ -33,7 +33,7 @@
 
                     if (activeOrders.Count != 0)
                     {
-                        if (activeOrders.All(o => o.Status == 4))
+                        if (activeOrders.All(o => o.Status == 4 || o.Status == 6 || o.Status == 7 || o.Status == 8))
                         {
                             bgClass = "bg-brown";
                         }
@@ -166,7 +166,6 @@
                         {
                             <button id="partialPayBtn" class="btn btn-secondary" disabled>Seçilenleri Öde</button>
                         }
-                        @* <button id="cancelAllOrdersBtn" class="btn btn-danger" disabled>Tüm Ödemeleri İptal Et</button> *@
                     </div>
                     <div class="d-flex gap-2">
                         @if (role == "Admin" || allowedPages.Contains("Payment"))
@@ -177,6 +176,21 @@
                     </div>
                 </div>
 
+                <div class="mb-3 mt-3 d-flex gap-5">
+                    @if (role == "Admin" || allowedPages.Contains("CancelOrders"))
+                    {
+                        <button id="cancelSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İptal Et</button>
+                    }
+                    @if (role == "Admin" || allowedPages.Contains("ReturnOrders"))
+                    {
+                        <button id="returnSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İade Et</button>
+                    }
+                    @if (role == "Admin" || allowedPages.Contains("BonusOrders"))
+                    {
+                        <button id="bonusSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İkram Et</button>
+                    }
+                </div>
+
                 <div class="mb-3 mt-3">
                     @if (role == "Admin" || allowedPages.Contains("MoveTableAndOrders"))
                     {
@@ -185,7 +199,6 @@
                         <button id="moveTableBtn" class="btn btn-warning mt-2">Taşı</button>
                         <button id="moveSelectedOrdersBtn" class="btn btn-info mt-2" disabled>Seçilenleri Taşı</button>
                     }
-                    @* <button id="cancelSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İptal Et</button> *@
                     @if (role == "Admin" || allowedPages.Contains("AddOrders"))
                     {
                         <div class="d-flex justify-content-end">
@@ -291,34 +304,72 @@
                     } else if (o.status === 3) {
                         orderStatusText = 'Teslim Edildi';
                     } else if (o.status === 4) {
-                        orderAction = `<button class="btn btn-link btn-sm cancel-order-btn" data-id="${o.id}">
-                                <i class="bi bi-x-circle-fill text-danger"></i>
-                              </button>`;
-                              hasPaidOrders = true;
+                        hasPaidOrders = true;
+                    } else if (o.status === 6) {
+                        orderStatusText = 'İade Edildi';
+                        rowClass = 'bg-light-return';
+                    } else if (o.status === 7) {
+                        orderStatusText = 'İptal Edildi';
+                        rowClass = 'bg-light-cancel';
+                    } else if (o.status === 8) {
+                        orderStatusText = 'İkram Edildi';
+                        rowClass = 'bg-light-bonus';
                     }
 
-                const row = o.status === 4
-                    ? `<div class="d-flex justify-content-between align-items-center border-bottom py-1">
-                           <div>${o.productName}</div>
-                           <div class="d-flex justify-content-end align-items-center gap-2">
-                           <span class="text-success"> <i class="bi bi-check-circle-fill"></i> Ödendi</span>
-                           <div>${orderAction}</div>
-                           </div>
-                       </div>`
-                    : `<div class="d-flex justify-content-between align-items-center border-bottom py-1">
-                           <div>
-                               <input type="checkbox" class="form-check-input order-checkbox me-2" data-id="${o.id}" data-price="${o.price}" />
-                               ${o.productName}
-                           </div>
-                           <div class="d-flex justify-content-center flex-grow-1">
-                               <span class="order-status">${orderStatusText}</span>
-                           </div>
-                           <span class="price">${o.price} TL</span>
-                       </div>`;
+                    if (o.status === 4) {
+                        paidAmount += o.price;
+                        return `
+                            <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+                                <div>${o.productName}</div>
+                                <div class="d-flex justify-content-end align-items-center gap-2">
+                                    <span class="text-success"><i class="bi bi-check-circle-fill"></i> Ödendi</span>
+                                </div>
+                            </div>`;
+                        }
 
-                if (o.status === 4) paidAmount += o.price;
-                if (o.status !== 0) totalAmount += o.price;
-                return row;
+                    if (o.status === 6) {
+                        return `
+                            <div class="d-flex justify-content-between align-items-center border-bottom py-1 ${rowClass}">
+                                <div>${o.productName}</div>
+                                <div class="d-flex justify-content-end align-items-center gap-2 text-danger">
+                                    <i class="bi-arrow-counterclockwise"></i> ${orderStatusText}
+                                </div>
+                            </div>`;
+                    }
+
+                    if (o.status === 7) {
+                        return `
+                            <div class="d-flex justify-content-between align-items-center border-bottom py-1 ${rowClass}">
+                                <div>${o.productName}</div>
+                                <div class="d-flex justify-content-end align-items-center gap-2 text-danger">
+                                    <i class="bi-trash-fill"></i> ${orderStatusText}
+                                </div>
+                            </div>`;
+                    }
+
+                    if (o.status === 8) {
+                        return `
+                            <div class="d-flex justify-content-between align-items-center border-bottom py-1 ${rowClass}">
+                                <div>${o.productName}</div>
+                                <div class="d-flex justify-content-end align-items-center gap-2 text-danger">
+                                    <i class="bi bi-gift-fill"></i> ${orderStatusText}
+                                </div>
+                            </div>`;
+                    }
+
+                    totalAmount += o.price;
+
+                    return `
+                        <div class="d-flex justify-content-between align-items-center border-bottom py-1">
+                            <div>
+                                <input type="checkbox" class="form-check-input order-checkbox me-2" data-id="${o.id}" data-price="${o.price}" />
+                                ${o.productName}
+                            </div>
+                            <div class="d-flex justify-content-center flex-grow-1">
+                                <span class="order-status">${orderStatusText}</span>
+                            </div>
+                            <span class="price">${o.price} TL</span>
+                        </div>`;
             }).join('');
 
                 $('#orderList').html(orders);
@@ -328,8 +379,6 @@
                 $('#remainingAmount').text((remaining > 0 ? remaining : 0).toFixed(2) + '');
                 $('#selectedAmount').text(0);
                 togglePaymentButtons(totalAmount > 0);
-
-                $('#cancelAllOrdersBtn').prop('disabled', !hasPaidOrders);
 
                 $('#moveTableSelect').empty();
                 data.allTables.forEach(t => {
@@ -477,14 +526,6 @@
             $('#moveSelectedOrdersBtn').prop('disabled', !hasSelection);
         });
 
-        $(document).on('click', '.cancel-order-btn', function () {
-            const orderId = $(this).data('id');
-
-            $.post('/Table/UpdateOrderStatus', { orderId: orderId }, function () {
-                 loadTableDetails(selectedTableId);
-            });
-        });
-
         document.querySelectorAll('.close-table-btn').forEach(button => {
             button.addEventListener('click', function () {
                 const tableId = this.getAttribute('data-id');
@@ -513,6 +554,8 @@
         $(document).on('change', '.order-checkbox', function () {
             const anyChecked = $('.order-checkbox:checked').length > 0;
             $('#cancelSelectedOrdersBtn').prop('disabled', !anyChecked);
+            $('#returnSelectedOrdersBtn').prop('disabled', !anyChecked);
+            $('#bonusSelectedOrdersBtn').prop('disabled', !anyChecked);
         });
 
         $('#cancelSelectedOrdersBtn').click(function () {
@@ -536,6 +579,62 @@
                 } else {
                     alert("İptal işlemi başarısız oldu.");
                 }
+            });
+        });
+
+        $('#returnSelectedOrdersBtn').click(function () {
+            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
+                return parseInt($(this).data('id'));
+            }).get();
+
+            if (selectedOrderIds.length === 0) {
+                alert("Lütfen iade etmek istediğiniz siparişleri seçin.");
+                return;
+            }
+
+            if (!confirm("Seçilen siparişleri iade etmek istediğinize emin misiniz?")) return;
+
+            $.post('/Table/ReturnOrders', {
+                tableId: selectedTableId,
+                method: 3,
+                orderIds: selectedOrderIds
+            }, function (res) {
+                if (res.success) {
+                    alert("Seçilen siparişler iade edildi.");
+                    loadTableDetails(selectedTableId);
+                } else {
+                    alert("İade işlemi başarısız oldu.");
+                }
+            }).fail(function () {
+                alert("Sunucu hatası oluştu.");
+            });
+        });
+
+        $('#bonusSelectedOrdersBtn').click(function () {
+            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
+                return parseInt($(this).data('id'));
+            }).get();
+
+            if (selectedOrderIds.length === 0) {
+                alert("Lütfen ikram etmek istediğiniz siparişleri seçin.");
+                return;
+            }
+
+            if (!confirm("Seçilen siparişleri ikram etmek istediğinize emin misiniz?")) return;
+
+            $.post('/Table/BonusOrders', {
+                tableId: selectedTableId,
+                method: 4,
+                orderIds: selectedOrderIds
+            }, function (res) {
+                if (res.success) {
+                    alert("Seçilen siparişler ikram edildi.");
+                    loadTableDetails(selectedTableId);
+                } else {
+                    alert("İkram işlemi başarısız oldu.");
+                }
+            }).fail(function () {
+                alert("Sunucu hatası oluştu.");
             });
         });
 
@@ -572,11 +671,22 @@
                             <label class="form-check-label me-2" for="prod${item.id}">
                                 ${item.name} - ${item.price} TL
                             </label>
-                            <input type="number" min="1" value="1" class="form-control form-control-sm product-quantity" data-product-id="${item.id}" style="width: 60px;" />
+                            <input type="number" min="1" max="${item.stockCount ?? ''}" value="1" class="form-control form-control-sm product-quantity" data-product-id="${item.id}" style="width: 60px;" />
                         </div>`;
                 });
                 $('#productCheckboxList').html(html);
             });
+        });
+                
+        $(document).on('input', '.product-quantity', function () {
+            const max = parseInt($(this).attr('max'));
+            let val = parseInt($(this).val());
+
+            if (val > max) {
+                $(this).val(max);
+            } else if (val < 1 || isNaN(val)) {
+                $(this).val(1);
+            }
         });
 
         $('#addOrderBtn').click(function () {
@@ -607,16 +717,6 @@
                     loadTableDetails(selectedTableId);
                 }
             });
-        });
-
-        $(document).on('click', '#cancelAllOrdersBtn', function () {
-            if (!selectedTableId) return;
-
-            if (confirm("Tüm ödenmiş siparişleri iptal etmek istediğinize emin misiniz?")) {
-                $.post('/Table/CancelAllPaidOrders', { tableId: selectedTableId }, function () {
-                    loadTableDetails(selectedTableId);
-                });
-            }
         });
     </script>
 }
