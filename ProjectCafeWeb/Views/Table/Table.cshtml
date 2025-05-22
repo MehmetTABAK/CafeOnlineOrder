@@ -156,6 +156,15 @@
                     <div class="text-end">
                         <strong>Toplam Tutar: <span id="totalAmount">0</span> TL</strong><br>
                         <strong>Ödenen Tutar: <span id="paidAmount">0</span> TL</strong><br>
+                        <div id="cancelledRow" style="display: none;">
+                            <strong>İptal Tutarı: <span id="cancelledAmount">0</span> TL</strong><br>
+                        </div>
+                        <div id="returnedRow" style="display: none;">
+                            <strong>İade Tutarı: <span id="returnedAmount">0</span> TL</strong><br>
+                        </div>
+                        <div id="bonusRow" style="display: none;">
+                            <strong>İkram Tutarı: <span id="bonusAmount">0</span> TL</strong><br>
+                        </div>
                         <strong>Kalan Tutar: <span id="remainingAmount">0</span> TL</strong>
                     </div>
                 </div>
@@ -229,11 +238,11 @@
                     <p>Toplam: <strong><span id="splitTotalAmount">0</span> TL</strong></p>
                     <div class="form-group mb-3">
                         <label>Kart ile Ödenen</label>
-                        <input type="number" class="form-control" id="splitCardAmount" min="0" />
+                        <input type="text" class="form-control" id="splitCardAmount" />
                     </div>
                     <div class="form-group mb-3">
                         <label>Nakit ile Ödenen</label>
-                        <input type="number" class="form-control" id="splitCashAmount" min="0" />
+                        <input type="text" class="form-control" id="splitCashAmount" />
                     </div>
                     <button id="confirmSplitPayment" class="btn btn-primary w-100">Ödemeyi Tamamla</button>
                 </div>
@@ -272,6 +281,27 @@
     </div>
 }
 
+<!-- İade Sebebi Modalı -->
+@if (role == "Admin" || allowedPages.Contains("ReturnOrders"))
+{
+    <div class="modal fade" id="returnReasonModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">İade Sebebi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="returnReasonText" class="form-control" rows="3" placeholder="İade sebebini yazınız..."></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="confirmReturnBtn" class="btn btn-danger">İadeyi Onayla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @section Scripts {
     <script>
         let selectedTableId;
@@ -290,93 +320,109 @@
 
                 let totalAmount = 0;
                 let paidAmount = 0;
-                let hasPaidOrders = false;
+                let returnAmount = 0;
+                let cancelAmount = 0;
+                let bonusAmount = 0;
 
-                const allPaid = data.orders.every(o => o.status === 4);
-                togglePaymentButtons(!allPaid);
+                const allFinalized = data.orders.every(o => [4, 6, 7, 8].includes(o.status));
+                togglePaymentButtons(!allFinalized);
 
                 let orders = data.orders.map(o => {
                     let orderStatusText = '';
-                    if (o.status === 1) {
-                        orderStatusText = 'Sipariş Verildi';
-                    } else if (o.status === 2) {
-                        orderStatusText = 'Hazırlanıyor';
-                    } else if (o.status === 3) {
-                        orderStatusText = 'Teslim Edildi';
-                    } else if (o.status === 4) {
-                        hasPaidOrders = true;
-                    } else if (o.status === 6) {
-                        orderStatusText = 'İade Edildi';
-                        rowClass = 'bg-light-return';
-                    } else if (o.status === 7) {
-                        orderStatusText = 'İptal Edildi';
-                        rowClass = 'bg-light-cancel';
-                    } else if (o.status === 8) {
-                        orderStatusText = 'İkram Edildi';
-                        rowClass = 'bg-light-bonus';
+                    let rowClass = '';
+                    let price = o.price || 0;
+
+                    // Her sipariş, toplam tutara eklenecek (durumu ne olursa olsun)
+                    totalAmount += price;
+
+                    switch (o.status) {
+                        case 1:
+                            orderStatusText = 'Sipariş Verildi';
+                            break;
+                        case 2:
+                            orderStatusText = 'Hazırlanıyor';
+                            break;
+                        case 3:
+                            orderStatusText = 'Teslim Edildi';
+                            break;
+                        case 4:
+                            orderStatusText = 'Ödendi';
+                            paidAmount += price;
+                            break;
+                        case 6:
+                            orderStatusText = 'İade Edildi';
+                            rowClass = 'bg-light-return';
+                            returnAmount += price;
+                            break;
+                        case 7:
+                            orderStatusText = 'İptal Edildi';
+                            rowClass = 'bg-light-cancel';
+                            cancelAmount += price;
+                            break;
+                        case 8:
+                            orderStatusText = 'İkram Edildi';
+                            rowClass = 'bg-light-bonus';
+                            bonusAmount += price;
+                            break;
                     }
 
-                    if (o.status === 4) {
-                        paidAmount += o.price;
-                        return `
-                            <div class="d-flex justify-content-between align-items-center border-bottom py-1">
-                                <div>${o.productName}</div>
-                                <div class="d-flex justify-content-end align-items-center gap-2">
-                                    <span class="text-success"><i class="bi bi-check-circle-fill"></i> Ödendi</span>
-                                </div>
-                            </div>`;
+                    if ([4, 6, 7, 8].includes(o.status)) {
+                        let iconHtml = '';
+                        let textClass = 'text-muted';
+
+                        if (o.status === 4) {
+                            iconHtml = '<i class="bi bi-check-circle-fill text-success"></i>';
+                            textClass = 'text-success';
+                        } else if (o.status === 6) {
+                            iconHtml = '<i class="bi bi-arrow-counterclockwise text-danger"></i>';
+                            textClass = 'text-danger';
+                        } else if (o.status === 7) {
+                            iconHtml = '<i class="bi bi-trash-fill text-danger"></i>';
+                            textClass = 'text-danger';
+                        } else if (o.status === 8) {
+                            iconHtml = '<i class="bi bi-gift-fill text-info"></i>';
+                            textClass = 'text-info';
                         }
 
-                    if (o.status === 6) {
                         return `
                             <div class="d-flex justify-content-between align-items-center border-bottom py-1 ${rowClass}">
                                 <div>${o.productName}</div>
-                                <div class="d-flex justify-content-end align-items-center gap-2 text-danger">
-                                    <i class="bi-arrow-counterclockwise"></i> ${orderStatusText}
+                                <div class="d-flex justify-content-end align-items-center gap-2 ${textClass}">
+                                    ${iconHtml} ${orderStatusText}
+                                </div>
+                                <div>
+                                    ${o.price} TL
                                 </div>
                             </div>`;
                     }
-
-                    if (o.status === 7) {
-                        return `
-                            <div class="d-flex justify-content-between align-items-center border-bottom py-1 ${rowClass}">
-                                <div>${o.productName}</div>
-                                <div class="d-flex justify-content-end align-items-center gap-2 text-danger">
-                                    <i class="bi-trash-fill"></i> ${orderStatusText}
-                                </div>
-                            </div>`;
-                    }
-
-                    if (o.status === 8) {
-                        return `
-                            <div class="d-flex justify-content-between align-items-center border-bottom py-1 ${rowClass}">
-                                <div>${o.productName}</div>
-                                <div class="d-flex justify-content-end align-items-center gap-2 text-danger">
-                                    <i class="bi bi-gift-fill"></i> ${orderStatusText}
-                                </div>
-                            </div>`;
-                    }
-
-                    totalAmount += o.price;
 
                     return `
                         <div class="d-flex justify-content-between align-items-center border-bottom py-1">
                             <div>
-                                <input type="checkbox" class="form-check-input order-checkbox me-2" data-id="${o.id}" data-price="${o.price}" />
+                                <input type="checkbox" class="form-check-input order-checkbox me-2" data-id="${o.id}" data-price="${price}" />
                                 ${o.productName}
                             </div>
                             <div class="d-flex justify-content-center flex-grow-1">
                                 <span class="order-status">${orderStatusText}</span>
                             </div>
-                            <span class="price">${o.price} TL</span>
+                            <span class="price">${price} TL</span>
                         </div>`;
-            }).join('');
+                }).join('');
 
                 $('#orderList').html(orders);
-                $('#totalAmount').text(totalAmount);
-                $('#paidAmount').text(paidAmount);
-                const remaining = totalAmount - paidAmount;
-                $('#remainingAmount').text((remaining > 0 ? remaining : 0).toFixed(2) + '');
+                $('#totalAmount').text(totalAmount.toFixed(2));
+                $('#paidAmount').text(paidAmount.toFixed(2));
+                $('#returnedAmount').text(returnAmount.toFixed(2));
+                $('#cancelledAmount').text(cancelAmount.toFixed(2));
+                $('#bonusAmount').text(bonusAmount.toFixed(2));
+
+                const remaining = totalAmount - paidAmount - returnAmount - cancelAmount - bonusAmount;
+                $('#remainingAmount').text((remaining > 0 ? remaining : 0).toFixed(2));
+
+                $('#cancelledRow').toggle(cancelAmount > 0);
+                $('#returnedRow').toggle(returnAmount > 0);
+                $('#bonusRow').toggle(bonusAmount > 0);
+
                 $('#selectedAmount').text(0);
                 togglePaymentButtons(totalAmount > 0);
 
@@ -435,8 +481,17 @@
         });
 
         $('#confirmSplitPayment').click(function () {
-            let card = parseFloat($('#splitCardAmount').val()) || 0;
-            let cash = parseFloat($('#splitCashAmount').val()) || 0;
+
+            console.log($('#splitCardAmount').val());
+            console.log($('#splitCashAmount').val());
+
+
+            let cardInput = $('#splitCardAmount').val().trim();
+            let cashInput = $('#splitCashAmount').val().trim();
+
+            let card = parseFloat(cardInput.replace(',', '.')) || 0;
+            let cash = parseFloat(cashInput.replace(',', '.')) || 0;
+
             let total = card + cash;
 
             if (Math.abs(total - selectedAmount) > 0.01) {
@@ -446,8 +501,8 @@
 
             const payload = {
                 orderIds: selectedOrderIds,
-                cardAmount: card,
-                cashAmount: cash
+                cardAmount: card.toString().replace(',', '.'),
+                cashAmount: cash.toString().replace(',', '.')
             };
 
             $.post('/Table/PaySelectedOrdersSplit', payload, function () {
@@ -457,19 +512,6 @@
         });
 
         $('#paymentMethodModal').on('hidden.bs.modal', function () {
-            $('#tableModal').modal('show');
-        });
-
-        $('#openOrderModalBtn').click(function () {
-            $('#menuCategorySelect').val('');
-            $('#subMenuCategorySelect').empty();
-            $('#productCheckboxList').empty();
-
-            $('#tableModal').modal('hide');
-            $('#orderModal').modal('show');
-        });
-
-        $('#orderModal').on('hidden.bs.modal', function () {
             $('#tableModal').modal('show');
         });
 
@@ -582,26 +624,49 @@
             });
         });
 
+        let selectedReturnOrderIds = [];
+
         $('#returnSelectedOrdersBtn').click(function () {
-            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
+            selectedReturnOrderIds = $('.order-checkbox:checked').map(function () {
                 return parseInt($(this).data('id'));
             }).get();
 
-            if (selectedOrderIds.length === 0) {
+            if (selectedReturnOrderIds.length === 0) {
                 alert("Lütfen iade etmek istediğiniz siparişleri seçin.");
                 return;
             }
 
-            if (!confirm("Seçilen siparişleri iade etmek istediğinize emin misiniz?")) return;
+            // Diğer modallarla uyumlu: önce tableModal'ı kapat
+            $('#tableModal').modal('hide');
+
+            // Iade sebebi modalını aç
+            $('#returnReasonText').val('');
+            const modal = new bootstrap.Modal(document.getElementById('returnReasonModal'));
+            modal.show();
+        });
+
+        $('#returnReasonModal').on('hidden.bs.modal', function () {
+            $('#tableModal').modal('show');
+        });
+
+        $('#confirmReturnBtn').click(function () {
+            const reason = $('#returnReasonText').val().trim();
+
+            if (!reason) {
+                alert("Lütfen iade sebebini giriniz.");
+                return;
+            }
 
             $.post('/Table/ReturnOrders', {
                 tableId: selectedTableId,
                 method: 3,
-                orderIds: selectedOrderIds
+                comment: reason,
+                orderIds: selectedReturnOrderIds
             }, function (res) {
                 if (res.success) {
                     alert("Seçilen siparişler iade edildi.");
                     loadTableDetails(selectedTableId);
+                    bootstrap.Modal.getInstance(document.getElementById('returnReasonModal')).hide();
                 } else {
                     alert("İade işlemi başarısız oldu.");
                 }
@@ -638,16 +703,34 @@
             });
         });
 
-        $('.addimg').click(function () {
-            $.get('/Table/GetMenuCategories', function (data) {
-                $('#menuCategorySelect').html('<option value="">Seçiniz</option>');
-                data.forEach(item => {
-                    $('#menuCategorySelect').append(`<option value="${item.id}">${item.categoryName}</option>`);
-                });
-            });
+        $('#orderModal').on('hidden.bs.modal', function () {
+            $('#tableModal').modal('show');
+        });
 
-            $('#subMenuCategorySelect').html('');
-            $('#productCheckboxList').html('');
+        $('.addimg').click(function () {
+            $.get('/Table/GetDayStatus', function (res) {
+                if (!res.isDayOpen) {
+                    alert("Gün başlatılmadı veya gün sonu alındı. Sipariş eklenemez.");
+                    return;
+                }
+
+                // Gün açıksa devam et
+                $('#menuCategorySelect').val('');
+                $('#subMenuCategorySelect').empty();
+                $('#productCheckboxList').empty();
+
+                // Kategorileri yükle
+                $.get('/Table/GetMenuCategories', function (data) {
+                    $('#menuCategorySelect').html('<option value="">Seçiniz</option>');
+                    data.forEach(item => {
+                        $('#menuCategorySelect').append(`<option value="${item.id}">${item.categoryName}</option>`);
+                    });
+                });
+
+                // Modal geçişi
+                $('#tableModal').modal('hide');
+                $('#orderModal').modal('show');
+            });
         });
 
         $('#menuCategorySelect').change(function () {

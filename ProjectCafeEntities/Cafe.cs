@@ -25,5 +25,6 @@ namespace ProjectCafeEntities
 		public virtual ICollection<MenuCategory>? MenuCategories { get; set; }
 		public virtual ICollection<Worker>? Workers { get; set; }
 		public virtual ICollection<Section>? Sections { get; set; }
-	}
+        public virtual ICollection<DailyReport>? DailyReport { get; set; }
+    }
 }

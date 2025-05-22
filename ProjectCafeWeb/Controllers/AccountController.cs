@@ -14,61 +14,142 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [AuthorizeWithPermission("ViewDailyAccount")]
-		public IActionResult DailyAccount(DateTime? selectedDate)
-		{
+        public IActionResult DailyAccount(int? reportId)
+        {
             var cafeId = GetCurrentCafeId();
             if (cafeId == null)
                 return Unauthorized();
 
-            var paymentsQuery = _dbContext.Payment
-				.Include(p => p.Table)
+            DailyReport report;
+
+            if (reportId != null)
+            {
+                report = _dbContext.DailyReport
+                    .FirstOrDefault(r => r.Id == reportId && r.CafeId == cafeId);
+            }
+            else
+            {
+                // Önce aktif raporu al, yoksa en son tamamlanan raporu al
+                report = _dbContext.DailyReport
+                    .Where(r => r.CafeId == cafeId)
+                    .OrderByDescending(r => r.StartTime)
+                    .FirstOrDefault();
+            }
+
+            if (report == null)
+            {
+                ViewBag.Message = "Henüz geçmişe veya aktif güne ait bir rapor bulunamadı.";
+                return View(new List<DailyAccountViewModel>());
+            }
+
+            var payments = _dbContext.Payment
+                .Include(p => p.Table).ThenInclude(t => t.Section)
+                .Where(p => p.Active &&
+                            p.Table.Section.CafeId == cafeId &&
+                            p.RegistrationDate >= report.StartTime &&
+                            (report.EndTime == null || p.RegistrationDate <= report.EndTime))
+                .ToList();
+
+            var admins = _dbContext.Admin.ToDictionary(a => a.Id, a => $"{a.Firstname} {a.Lastname}");
+
+            var dailyDatas = payments.Select(p => new DailyAccountViewModel
+            {
+                RegistrationDate = p.RegistrationDate,
+                TableName = p.Table?.Name ?? "-",
+                TotalPrice = p.TotalPrice,
+                PaymentMethod = p.Method == 1 ? "Kart" :
+                                p.Method == 2 ? "Nakit" :
+                                p.Method == 3 ? "İade" :
+                                p.Method == 4 ? "İkram" : "-",
+                Comment = p.Comment ?? "-",
+                RegistrationUserFullName = admins.ContainsKey(p.RegistrationUser) ? admins[p.RegistrationUser] : "-",
+                Date = p.RegistrationDate.ToString("dd.MM.yyyy")
+            }).OrderBy(p => p.RegistrationDate).ToList();
+
+            ViewData["SelectedReport"] = report;
+            ViewData["AllReports"] = _dbContext.DailyReport
+                .Where(r => r.CafeId == cafeId)
+                .OrderByDescending(r => r.StartTime)
+                .ToList();
+
+            return View(dailyDatas);
+        }
+
+        [AuthorizeWithPermission("StartDay")]
+        [HttpPost]
+        public IActionResult StartDay()
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var cafeId = GetCurrentCafeId();
+            if (cafeId == null) return Unauthorized();
+
+            var activeReport = _dbContext.DailyReport
+                .FirstOrDefault(r => r.CafeId == cafeId && r.EndTime == null);
+
+            if (activeReport != null)
+            {
+                TempData["ErrorMessage"] = "Zaten açık bir gün mevcut.";
+                return RedirectToAction("DailyAccount");
+            }
+
+            var report = new DailyReport
+            {
+                CafeId = cafeId.Value,
+                StartTime = DateTime.Now,
+                Active = true,
+                RegistrationUser = userId.Value,
+                RegistrationUserRole = userRole,
+                RegistrationDate = DateTime.Now,
+            };
+
+            _dbContext.DailyReport.Add(report);
+            _dbContext.SaveChanges();
+
+            TempData["SuccessMessage"] = "Gün başarıyla açıldı.";
+            return RedirectToAction("DailyAccount", new { reportId = report.Id });
+        }
+
+        [AuthorizeWithPermission("EndDay")]
+        [HttpPost]
+        public IActionResult EndDay()
+        {
+            var cafeId = GetCurrentCafeId();
+            if (cafeId == null)
+            {
+                TempData["ErrorMessage"] = "Kafe bilgisi alınamadı.";
+                return RedirectToAction("DailyAccount");
+            }
+
+            var activeReport = _dbContext.DailyReport
+                .FirstOrDefault(r => r.CafeId == cafeId && r.EndTime == null);
+
+            if (activeReport == null)
+            {
+                TempData["ErrorMessage"] = "Bu gün zaten kapatılmış.";
+                return RedirectToAction("DailyAccount");
+            }
+
+            var openTables = _dbContext.Order
+                .Include(o => o.Table)
                 .ThenInclude(t => t.Section)
-				.Where(p => p.Active &&
-                        p.Table != null &&
-                        p.Table.Section != null &&
-                        p.Table.Section.CafeId == cafeId);
+                .Where(o => o.Active && o.Status != 5 && o.Table.Section.CafeId == cafeId)
+                .Select(o => o.Table.Name)
+                .Distinct()
+                .ToList();
 
-			if (selectedDate.HasValue)
-			{
-				paymentsQuery = paymentsQuery.Where(d => d.RegistrationDate.Date == selectedDate.Value.Date);
-			}
-			else
-			{
-				var latestActivePayment = _dbContext.Payment
-					.Where(p => p.Active)
-					.OrderByDescending(p => p.RegistrationDate)
-					.FirstOrDefault();
+            if (openTables.Any())
+            {
+                TempData["ErrorMessage"] = $"Gün sonu alınamaz. Kapatılmamış masalar: {string.Join(", ", openTables)}";
+                return RedirectToAction("DailyAccount");
+            }
 
-				if (latestActivePayment != null)
-				{
-					paymentsQuery = paymentsQuery.Where(d => d.RegistrationDate.Date == latestActivePayment.RegistrationDate.Date);
-				}
-				else
-				{
-					paymentsQuery = Enumerable.Empty<Payment>().AsQueryable();
-				}
-			}
+            activeReport.EndTime = DateTime.Now;
+            _dbContext.SaveChanges();
 
-			var admins = _dbContext.Admin.ToDictionary(a => a.Id, a => $"{a.Firstname} {a.Lastname}");
+            TempData["SuccessMessage"] = "Gün başarıyla kapatıldı.";
+            return RedirectToAction("DailyAccount", new { reportId = activeReport.Id });
+        }
 
-			var dailyDatas = paymentsQuery
-				.OrderBy(d => d.RegistrationDate)
-				.ToList()
-				.Select(item => new DailyAccountViewModel
-				{
-					RegistrationDate = item.RegistrationDate,
-					TableName = item.Table?.Name ?? "-",
-					TotalPrice = item.TotalPrice,
-					PaymentMethod = item.Method == 1 ? "Kart" : item.Method == 2 ? "Nakit" : item.Method == 3 ? "İade" : item.Method == 4 ? "İkram" : "-",
-					RegistrationUserFullName = admins.ContainsKey(item.RegistrationUser) ? admins[item.RegistrationUser] : "-",
-					//CorrectionUserFullName = item.CorrectionUser.HasValue && admins.ContainsKey(item.CorrectionUser.Value) ? admins[item.CorrectionUser.Value] : "-",
-					//CorrectionDate = item.CorrectionDate?.ToString("dd.MM.yyyy HH:mm") ?? "-",
-					Date = item.RegistrationDate.ToString("dd.MM.yyyy")
-				}).ToList();
-
-			ViewData["SelectedDate"] = selectedDate;
-
-			return View(dailyDatas);
-		}
-	}
+    }
 }

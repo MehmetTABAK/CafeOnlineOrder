@@ -21,6 +21,7 @@ namespace ProjectCafeDataAccess
 		public virtual DbSet<Product> Product { get; set; }
 		public virtual DbSet<Order> Order { get; set; }
 		public virtual DbSet<Payment> Payment { get; set; }
+		public virtual DbSet<DailyReport> DailyReport { get; set; }
 
 		public ProjectCafeDbContext(DbContextOptions<ProjectCafeDbContext> options) : base(options)
 		{

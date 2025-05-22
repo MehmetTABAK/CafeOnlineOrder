@@ -10,9 +10,11 @@ namespace ProjectCafeEntities
 	{
 		public int Id { get; set; }
 		public int TableId { get; set; }
-		public double TotalPrice { get; set; }
+        public int? DailyReportId { get; set; }
+        public double TotalPrice { get; set; }
 		public byte Method { get; set; }
-		public bool Active { get; set; }
+        public string? Comment { get; set; }
+        public bool Active { get; set; }
 		public int RegistrationUser { get; set; }
 		public string RegistrationUserRole { get; set; }
 		public DateTime RegistrationDate { get; set; }
@@ -21,5 +23,6 @@ namespace ProjectCafeEntities
 		public DateTime? CorrectionDate { get; set; }
 
 		public virtual Table? Table { get; set; }
-	}
+        public virtual DailyReport? DailyReport { get; set; }
+    }
 }
