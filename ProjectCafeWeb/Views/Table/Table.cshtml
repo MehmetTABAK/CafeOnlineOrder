@@ -186,6 +186,17 @@
                 </div>
 
                 <div class="mb-3 mt-3 d-flex gap-5">
+                    @if (role == "Admin" || allowedPages.Contains("ConfirmOrder"))
+                    {
+                        <button id="confirmOrderBtn" class="btn btn-danger mt-2" disabled>Onayla</button>
+                    }
+                    @if (role == "Admin" || allowedPages.Contains("DeliverTheOrder"))
+                    {
+                        <button id="deliverTheOrderBtn" class="btn btn-danger mt-2" disabled>Teslim Et</button>
+                    }
+                </div>
+
+                <div class="mb-3 mt-3 d-flex gap-5">
                     @if (role == "Admin" || allowedPages.Contains("CancelOrders"))
                     {
                         <button id="cancelSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İptal Et</button>
@@ -598,6 +609,56 @@
             $('#cancelSelectedOrdersBtn').prop('disabled', !anyChecked);
             $('#returnSelectedOrdersBtn').prop('disabled', !anyChecked);
             $('#bonusSelectedOrdersBtn').prop('disabled', !anyChecked);
+            $('#confirmOrderBtn').prop('disabled', !anyChecked);
+            $('#deliverTheOrderBtn').prop('disabled', !anyChecked);
+        });
+
+        $('#confirmOrderBtn').click(function () {
+            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
+                return parseInt($(this).data('id'));
+            }).get();
+
+            if (selectedOrderIds.length === 0) {
+                alert("Lütfen onaylamak istediğiniz siparişleri seçin.");
+                return;
+            }
+
+            if (!confirm("Seçilen siparişleri onaylamak istediğinize emin misiniz?")) return;
+
+            $.post('/Table/ConfirmOrders', {
+                orderIds: selectedOrderIds
+            }, function (res) {
+                if (res.success) {
+                    alert("Seçilen siparişler onaylandı.");
+                    loadTableDetails(selectedTableId);
+                } else {
+                    alert("Onaylama işlemi başarısız oldu.");
+                }
+            });
+        });
+
+        $('#deliverTheOrderBtn').click(function () {
+            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
+                return parseInt($(this).data('id'));
+            }).get();
+
+            if (selectedOrderIds.length === 0) {
+                alert("Lütfen teslim etmek istediğiniz siparişleri seçin.");
+                return;
+            }
+
+            if (!confirm("Seçilen siparişleri teslim etmek istediğinize emin misiniz?")) return;
+
+            $.post('/Table/DeliverTheOrders', {
+                orderIds: selectedOrderIds
+            }, function (res) {
+                if (res.success) {
+                    alert("Seçilen siparişler teslim edildi.");
+                    loadTableDetails(selectedTableId);
+                } else {
+                    alert("Teslim etme işlemi başarısız oldu.");
+                }
+            });
         });
 
         $('#cancelSelectedOrdersBtn').click(function () {

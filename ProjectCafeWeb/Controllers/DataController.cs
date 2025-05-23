@@ -9,15 +9,16 @@ using System.Text.Json;
 
 namespace ProjectCafeWeb.Controllers
 {
-	[Authorize]
-	public class DataController : BaseController
+    [Authorize]
+    public class DataController : BaseController
 	{
 		public DataController(ProjectCafeDbContext dbContext) : base(dbContext)
 		{
 		}
 
 		[AuthorizeWithPermission("ViewMenuCategory")]
-		public IActionResult MenuCategory()
+        [Route("menu-kategori")]
+        public IActionResult MenuCategory()
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -148,7 +149,8 @@ namespace ProjectCafeWeb.Controllers
 		}
 
 		[AuthorizeWithPermission("ViewSubMenuCategory")]
-		public IActionResult SubMenuCategory()
+        [Route("alt-menu-kategori")]
+        public IActionResult SubMenuCategory()
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -283,7 +285,8 @@ namespace ProjectCafeWeb.Controllers
 		}
 
 		[AuthorizeWithPermission("ViewProduct")]
-		public IActionResult Product()
+        [Route("urunler")]
+        public IActionResult Product()
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();

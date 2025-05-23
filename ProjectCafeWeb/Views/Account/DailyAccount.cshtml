@@ -52,10 +52,10 @@
     <div class="mb-3">
         @if (ViewData["AllReports"] is List<ProjectCafeEntities.DailyReport> reports)
         {
-            <form method="get" action="/Account/DailyAccount">
+            <form method="get" action="/gunluk-islemler">
                 <div class="input-group mb-3">
                     <label class="input-group-text">Günlük Rapor Seç</label>
-                    <select class="form-select" name="reportId" onchange="this.form.submit()">
+                    <select class="form-select" name="rapor" onchange="this.form.submit()">
                         <option value="">-- Aktif Gün --</option>
                         @foreach (var r in reports)
                         {
@@ -66,7 +66,7 @@
                                 @r.StartTime.ToString("dd.MM.yyyy HH:mm")
                                 @if (r.EndTime != null)
                                 {
-                                    @(" - " + r.EndTime?.ToString("HH:mm"))
+                                    @(" - " + r.EndTime?.ToString("dd.MM.yyyy HH:mm"))
                                 }
                                 else
                                 {
@@ -124,6 +124,18 @@
                     </tr>
                 }
             </tbody>
+
+
+            @if (ViewBag.TotalCard != null)
+            {
+                <div class="row mb-4">
+                    <div class="col-md-2"><strong>Toplam Kazanç:</strong> @((double)ViewBag.TotalCardAndCash) ₺</div>
+                    <div class="col-md-2"><strong>Toplam Kart:</strong> @((double)ViewBag.TotalCard) ₺</div>
+                    <div class="col-md-2"><strong>Toplam Nakit:</strong> @((double)ViewBag.TotalCash) ₺</div>
+                    <div class="col-md-2"><strong>Toplam İkram:</strong> @((double)ViewBag.TotalBonus) ₺</div>
+                    <div class="col-md-2"><strong>Toplam İade:</strong> @((double)ViewBag.TotalRefund) ₺</div>
+                </div>
+            }
         }
     </table>
 </div>

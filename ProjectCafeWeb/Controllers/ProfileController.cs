@@ -16,7 +16,8 @@ namespace ProjectCafeWeb.Controllers
 		{
 		}
 
-		public IActionResult MyProfile()
+        [Route("profilim")]
+        public IActionResult MyProfile()
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -65,7 +66,8 @@ namespace ProjectCafeWeb.Controllers
 		}
 
 		[AuthorizeWithPermission("ViewWorker")]
-		public IActionResult WorkerProfile()
+        [Route("calisanlar")]
+        public IActionResult WorkerProfile()
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -184,7 +186,8 @@ namespace ProjectCafeWeb.Controllers
 		}
 
 		[AuthorizeWithPermission("CafeProfile")]
-		public IActionResult CafeProfile()
+        [Route("kafe-profil")]
+        public IActionResult CafeProfile()
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();

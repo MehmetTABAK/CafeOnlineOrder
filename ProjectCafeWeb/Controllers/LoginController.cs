@@ -18,7 +18,7 @@ namespace ProjectCafeWeb.Controllers
 		}
 
 		[HttpGet]
-		public IActionResult SignIn()
+        public IActionResult SignIn()
 		{
 			return View();
 		}

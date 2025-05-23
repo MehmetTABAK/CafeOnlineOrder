@@ -12,6 +12,11 @@ namespace ProjectCafeEntities
         public int CafeId { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime? EndTime { get; set; }
+        public double? TotalAmount { get; set; }
+        public double? TotalCard { get; set; }
+        public double? TotalCash { get; set; }
+        public double? TotalBonus { get; set; }
+        public double? TotalRefund { get; set; }
         public bool Active { get; set; }
         public int RegistrationUser { get; set; }
         public string RegistrationUserRole { get; set; }

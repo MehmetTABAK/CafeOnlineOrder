@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProjectCafeDataAccess;
 using ProjectCafeEntities;
@@ -7,14 +8,16 @@ using ProjectCafeWeb.ViewModels;
 
 namespace ProjectCafeWeb.Controllers
 {
-	public class AccountController : BaseController
+    [Authorize]
+    public class AccountController : BaseController
 	{
         public AccountController(ProjectCafeDbContext dbContext) : base(dbContext)
         {
         }
 
         [AuthorizeWithPermission("ViewDailyAccount")]
-        public IActionResult DailyAccount(int? reportId)
+        [Route("gunluk-islemler")]
+        public IActionResult DailyAccount(int? rapor)
         {
             var cafeId = GetCurrentCafeId();
             if (cafeId == null)
@@ -22,10 +25,10 @@ namespace ProjectCafeWeb.Controllers
 
             DailyReport report;
 
-            if (reportId != null)
+            if (rapor != null)
             {
                 report = _dbContext.DailyReport
-                    .FirstOrDefault(r => r.Id == reportId && r.CafeId == cafeId);
+                    .FirstOrDefault(r => r.Id == rapor && r.CafeId == cafeId);
             }
             else
             {
@@ -65,6 +68,17 @@ namespace ProjectCafeWeb.Controllers
                 RegistrationUserFullName = admins.ContainsKey(p.RegistrationUser) ? admins[p.RegistrationUser] : "-",
                 Date = p.RegistrationDate.ToString("dd.MM.yyyy")
             }).OrderBy(p => p.RegistrationDate).ToList();
+
+            var totalCard = payments.Where(p => p.Method == 1).Sum(p => p.TotalPrice);
+            var totalCash = payments.Where(p => p.Method == 2).Sum(p => p.TotalPrice);
+            var totalRefund = payments.Where(p => p.Method == 3).Sum(p => p.TotalPrice);
+            var totalBonus = payments.Where(p => p.Method == 4).Sum(p => p.TotalPrice);
+
+            ViewBag.TotalCard = totalCard;
+            ViewBag.TotalCash = totalCash;
+            ViewBag.TotalRefund = totalRefund;
+            ViewBag.TotalBonus = totalBonus;
+            ViewBag.TotalCardAndCash = totalCard + totalCash;
 
             ViewData["SelectedReport"] = report;
             ViewData["AllReports"] = _dbContext.DailyReport
@@ -107,7 +121,7 @@ namespace ProjectCafeWeb.Controllers
             _dbContext.SaveChanges();
 
             TempData["SuccessMessage"] = "Gün başarıyla açıldı.";
-            return RedirectToAction("DailyAccount", new { reportId = report.Id });
+            return RedirectToAction("DailyAccount", new { rapor = report.Id });
         }
 
         [AuthorizeWithPermission("EndDay")]
@@ -133,7 +147,7 @@ namespace ProjectCafeWeb.Controllers
             var openTables = _dbContext.Order
                 .Include(o => o.Table)
                 .ThenInclude(t => t.Section)
-                .Where(o => o.Active && o.Status != 5 && o.Table.Section.CafeId == cafeId)
+                .Where(o => o.Active && o.Status != 5 && o.Table.Section.CafeId == cafeId && o.Table.Active)
                 .Select(o => o.Table.Name)
                 .Distinct()
                 .ToList();
@@ -148,7 +162,7 @@ namespace ProjectCafeWeb.Controllers
             _dbContext.SaveChanges();
 
             TempData["SuccessMessage"] = "Gün başarıyla kapatıldı.";
-            return RedirectToAction("DailyAccount", new { reportId = activeReport.Id });
+            return RedirectToAction("DailyAccount", new { rapor = activeReport.Id });
         }
 
     }

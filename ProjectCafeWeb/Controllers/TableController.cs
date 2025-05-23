@@ -1,6 +1,7 @@
 ﻿using Azure.Core;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis;
 using Microsoft.EntityFrameworkCore;
 using ProjectCafeDataAccess;
 using ProjectCafeEntities;
@@ -18,7 +19,8 @@ namespace ProjectCafeWeb.Controllers
 		}
 
 		[AuthorizeWithPermission("ViewTable")]
-		public IActionResult Table()
+        [Route("masalar")]
+        public IActionResult Table()
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -267,6 +269,75 @@ namespace ProjectCafeWeb.Controllers
             return Json(new { success = true, message = "Masa başarıyla kapatıldı." });
         }
 
+        [AuthorizeWithPermission("ConfirmOrder")]
+        [HttpPost]
+        public JsonResult ConfirmOrders(List<int> orderIds)
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var cafeId = GetCurrentCafeId();
+
+            if (orderIds == null || !orderIds.Any())
+                return Json(new { success = false });
+
+            var orders = _dbContext.Order
+                .Include(o => o.Product)
+                .ThenInclude(p => p.MenuCategory)
+                .Where(o => orderIds.Contains(o.Id) && o.Active && o.Product != null && o.Product.MenuCategory.CafeId == cafeId)
+                .ToList();
+
+            foreach (var order in orders)
+            {
+                order.Status = 2;
+                order.CorrectionUser = userId.Value;
+                order.CorrectionUserRole = userRole;
+                order.CorrectionDate = DateTime.Now;
+
+                // Eğer ürün stok takibindeyse, stok adedini geri ekle
+                var product = order.Product;
+                if (product != null && product.StockCount.HasValue)
+                {
+                    product.StockCount -= 1;
+                    if (product.StockCount == 0)
+                        product.Stock = false;
+                }
+            }
+
+            _dbContext.SaveChanges();
+
+            return Json(new { success = true });
+        }
+
+        [AuthorizeWithPermission("DeliverTheOrder")]
+        [HttpPost]
+        public JsonResult DeliverTheOrders(List<int> orderIds)
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var cafeId = GetCurrentCafeId();
+
+            if (orderIds == null || !orderIds.Any())
+                return Json(new { success = false });
+
+            var orders = _dbContext.Order
+                .Include(o => o.Product)
+                .ThenInclude(p => p.MenuCategory)
+                .Where(o => orderIds.Contains(o.Id) && o.Active && o.Product != null && o.Product.MenuCategory.CafeId == cafeId)
+                .ToList();
+
+            foreach (var order in orders)
+            {
+                order.Status = 3;
+                order.CorrectionUser = userId.Value;
+                order.CorrectionUserRole = userRole;
+                order.CorrectionDate = DateTime.Now;
+            }
+
+            _dbContext.SaveChanges();
+
+            return Json(new { success = true });
+        }
+
         [AuthorizeWithPermission("ReturnOrders")]
 		[HttpPost]
 		public JsonResult ReturnOrders(List<int> orderIds, int tableId, byte method, string comment)
@@ -329,18 +400,21 @@ namespace ProjectCafeWeb.Controllers
 
             foreach (var order in orders)
             {
-                order.Status = 7;
-                order.CorrectionUser = userId.Value;
-                order.CorrectionUserRole = userRole;
-                order.CorrectionDate = DateTime.Now;
-
                 // Eğer ürün stok takibindeyse, stok adedini geri ekle
                 var product = order.Product;
                 if (product != null && product.StockCount.HasValue)
                 {
-                    product.StockCount += 1;
-                    product.Stock = true; // stok tekrar mevcut hale gelebilir
+                    if (order.Status == 2 || order.Status == 3)
+                    {
+                        product.StockCount += 1;
+                        product.Stock = true; // stok tekrar mevcut hale gelebilir
+                    }
                 }
+
+                order.Status = 7;
+                order.CorrectionUser = userId.Value;
+                order.CorrectionUserRole = userRole;
+                order.CorrectionDate = DateTime.Now;
             }
 
             _dbContext.SaveChanges();
@@ -466,23 +540,11 @@ namespace ProjectCafeWeb.Controllers
 
             foreach (var productId in productIds)
             {
-                var product = _dbContext.Product.FirstOrDefault(x => x.Id == productId && x.Active && x.MenuCategory.CafeId == cafeId);
-
-                if (product == null)
-                    continue;
-
-                if (product.StockCount.HasValue && product.StockCount > 0)
-                {
-                    product.StockCount -= 1;
-                    if (product.StockCount == 0)
-                        product.Stock = false;
-                }
-
                 var order = new Order
                 {
                     ProductId = productId,
                     TableId = tableId,
-                    Status = 3,
+                    Status = 1,
                     Active = true,
                     RegistrationUser = userId.Value,
                     RegistrationUserRole = userRole,
