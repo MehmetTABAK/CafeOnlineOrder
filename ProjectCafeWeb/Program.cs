@@ -18,6 +18,7 @@ builder.Services.AddAuthentication("cookieAuth")
 
 builder.Services.AddAuthorization();
 builder.Services.AddSession();
+builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
 
@@ -40,9 +41,14 @@ app.UseAuthorization();
 app.MapStaticAssets();
 
 app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Home}/{id?}")
-    .WithStaticAssets();
+    name: "cafeRoute",
+    pattern: "{cafeId:int}/{tableId:int}",
+    defaults: new { controller = "UserHome", action = "UserHome" }
+);
 
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Home}/{id?}"
+);
 
 app.Run();

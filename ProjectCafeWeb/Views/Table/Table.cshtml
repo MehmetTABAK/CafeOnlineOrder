@@ -216,7 +216,7 @@
                     {
                         <label for="moveTableSelect" class="form-label">Masayı Taşı</label>
                         <select id="moveTableSelect" class="form-select"></select>
-                        <button id="moveTableBtn" class="btn btn-warning mt-2">Taşı</button>
+                        <button id="moveTableBtn" class="btn btn-warning mt-2">Tümünü Taşı</button>
                         <button id="moveSelectedOrdersBtn" class="btn btn-info mt-2" disabled>Seçilenleri Taşı</button>
                     }
                     @if (role == "Admin" || allowedPages.Contains("AddOrders"))
@@ -402,7 +402,7 @@
                                     ${iconHtml} ${orderStatusText}
                                 </div>
                                 <div>
-                                    ${o.price} TL
+                                    ${o.price.toFixed(2)} TL
                                 </div>
                             </div>`;
                     }
@@ -416,7 +416,7 @@
                             <div class="d-flex justify-content-center flex-grow-1">
                                 <span class="order-status">${orderStatusText}</span>
                             </div>
-                            <span class="price">${price} TL</span>
+                            <span class="price">${price.toFixed(2)} TL</span>
                         </div>`;
                 }).join('');
 
@@ -813,7 +813,7 @@
                         <div class="form-check">
                             <input class="form-check-input product-checkbox" type="checkbox" value="${item.id}" id="prod${item.id}">
                             <label class="form-check-label me-2" for="prod${item.id}">
-                                ${item.name} - ${item.price} TL
+                                ${item.name} - ${item.price.toFixed(2)} TL
                             </label>
                             <input type="number" min="1" max="${item.stockCount ?? ''}" value="1" class="form-control form-control-sm product-quantity" data-product-id="${item.id}" style="width: 60px;" />
                         </div>`;

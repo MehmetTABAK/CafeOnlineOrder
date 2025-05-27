@@ -1,0 +1,151 @@
+﻿@{
+    ViewData["Title"] = "Ürünler";
+    Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+
+@model IEnumerable<dynamic>
+
+<div class="container py-4">
+    <h2 class="text-center mb-4">Ürünler</h2>
+    <div class="row g-4">
+        @foreach (var product in Model)
+        {
+            <div class="col-md-4">
+                <div class="card text-center shadow-sm p-3 h-100">
+                    <img src="@product.Image" class="card-img-top" style="max-height:200px; object-fit:cover;" />
+                    <div class="card-body">
+                        <h5 class="card-title">@product.Name</h5>
+                        <p class="card-text">
+                            <strong>
+                                @if (product.IsThereDiscount)
+                                {
+                                    <span class="text-muted text-decoration-line-through me-2">@($"{product.Price:0.00}₺")</span>
+                                    <span class="text-danger">@($"{(product.Price * (1 - product.DiscountRate / 100)):0.00}₺")</span>
+                                }
+                                else
+                                {
+                                    <span>@($"{product.Price:0.00}₺")</span>
+                                }
+                            </strong>
+                        </p>
+                        <button class="btn btn-outline-success w-100 add-to-cart-btn" data-product-id="@product.Id">
+                            <i class="fa-solid fa-cart-plus me-1"></i> Sepete Ekle
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- AddToCart Modal -->
+<div class="modal fade" id="addToCartModal" tabindex="-1" aria-labelledby="addToCartModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Sepete Eklenen Ürünler</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body">
+                <div id="cartItemsContainer" class="row g-3">
+                    <!-- JavaScript ile doldurulacak -->
+                </div>
+                <hr />
+                <div class="text-end me-2">
+                    <strong>Toplam: <span id="modalTotal">0.00 ₺</span></strong>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Alışverişe Devam Et</button>
+                <a href="/User/Cart" class="btn btn-primary">Sepete Git</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $(".add-to-cart-btn").click(function () {
+                var productId = $(this).data("product-id");
+
+                $.post('/User/AddToCart', { productId: productId }, function (res) {
+                    // res yerine tüm cart listesi dönülmeli, response'u güncelle
+                    updateCartModal(res); // modalı güncelle
+                    var modal = new bootstrap.Modal(document.getElementById('addToCartModal'));
+                    modal.show();
+                }).fail(function () {
+                    alert("Sunucu hatası oluştu.");
+                });
+            });
+
+            function updateCartModal(cart) {
+                let container = $("#cartItemsContainer");
+                container.empty();
+                let total = 0;
+
+                cart.forEach(item => {
+                    let unitPrice = item.price; // zaten indirimli hali geliyor
+                    let itemTotal = unitPrice * item.quantity;
+                    total += itemTotal;
+
+                    console.log(item);
+
+                    container.append(`
+                        <div class="col-12 d-flex align-items-center">
+                            <img src="${item.image}" alt="${item.productName}" style="width: 60px; height: 60px; object-fit:cover; margin-right:10px;" />
+                            <div class="flex-grow-1">
+                                <strong>${item.productName}</strong><br/>
+                                Fiyat: ${unitPrice.toFixed(2)} ₺
+                            </div>
+                            <div class="mx-2">
+                                <input type="number" class="form-control quantity-input" min="1" max="${item.stockCount ?? ''}" value="${item.quantity}" data-productid="${item.productId}" style="width: 70px;" />
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-danger btn-sm btn-remove" data-productid="${item.productId}">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `);
+                });
+
+                $("#modalTotal").text(`${total.toFixed(2)} ₺`);
+            }
+
+            // Sepetten çıkarma
+            $(document).on("click", ".btn-remove", function () {
+                var productId = $(this).data("productid");
+                $.post('/User/RemoveFromCart', { productId: productId }, function (res) {
+                    if (res.success) {
+                        updateCartModal(res.cart);
+                    } else {
+                        alert("Ürün çıkarılamadı.");
+                    }
+                });
+            });
+
+            // Miktar güncelleme
+            $(document).on("change", ".quantity-input", function () {
+                const productId = $(this).data("productid");
+                const quantity = parseInt($(this).val());
+
+                $.post('/User/UpdateCartQuantity', { productId, quantity }, function (res) {
+                    updateCartModal(res); // sepeti yeniden güncelle
+                });
+            });
+
+            // En fazla stok sayısı kadar sayı girilebilir
+            $(document).on('input', '.quantity-input', function () {
+                const max = parseInt($(this).attr('max'));
+                let val = parseInt($(this).val());
+
+                if (val > max) {
+                    $(this).val(max);
+                } else if (val < 1 || isNaN(val)) {
+                    $(this).val(1);
+                }
+            });
+        });
+    </script>
+}

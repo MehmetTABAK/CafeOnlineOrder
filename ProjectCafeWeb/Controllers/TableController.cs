@@ -79,7 +79,9 @@ namespace ProjectCafeWeb.Controllers
                         o.Id,
                         productName = o.Product.Name,
                         o.Status,
-                        o.Product.Price
+                        Price = o.Product.IsThereDiscount && o.Product.DiscountRate.HasValue
+                            ? o.Product.Price * (1 - o.Product.DiscountRate.Value / 100.0)
+                            : o.Product.Price
                     }).ToList(),
                 allTables = allTables
             };
@@ -106,7 +108,9 @@ namespace ProjectCafeWeb.Controllers
 				return BadRequest("Seçili ürünler bulunamadı.");
 
 			var tableId = orders.First().TableId;
-			var total = orders.Sum(o => o.Product.Price);
+			var total = orders.Sum(o => o.Product.IsThereDiscount && o.Product.DiscountRate.HasValue
+                            ? o.Product.Price * (1 - o.Product.DiscountRate.Value / 100.0)
+                            : o.Product.Price);
 
             var card = double.Parse(cardAmount.Replace(',', '.'), CultureInfo.InvariantCulture);
             var cash = double.Parse(cashAmount.Replace(',', '.'), CultureInfo.InvariantCulture);
@@ -167,7 +171,9 @@ namespace ProjectCafeWeb.Controllers
 			if (!unpaidOrders.Any())
 				return BadRequest("Tüm ürünler zaten ödenmiş.");
 
-			var total = unpaidOrders.Sum(o => o.Product.Price);
+			var total = unpaidOrders.Sum(o => o.Product.IsThereDiscount && o.Product.DiscountRate.HasValue
+                            ? o.Product.Price * (1 - o.Product.DiscountRate.Value / 100.0)
+                            : o.Product.Price);
 
 			_dbContext.Payment.Add(new Payment
 			{
@@ -515,7 +521,14 @@ namespace ProjectCafeWeb.Controllers
 					x.Active && x.Stock &&
 					x.MenuCategory != null &&
 					x.MenuCategory.CafeId == cafeId)
-				.Select(x => new { x.Id, x.Name, x.Price, x.StockCount })
+				.Select(x => new { 
+                    x.Id,
+                    x.Name,
+                    Price = x.IsThereDiscount && x.DiscountRate.HasValue
+                            ? x.Price * (1 - x.DiscountRate.Value / 100.0)
+                            : x.Price,
+                    x.StockCount
+                })
 				.ToList();
 
             return Json(products);

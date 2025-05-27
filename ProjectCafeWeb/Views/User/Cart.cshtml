@@ -1,0 +1,101 @@
+﻿@model List<CartItem>
+
+@{
+    ViewData["Title"] = "Sepet";
+    Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+
+<h2 class="mb-4">Sepetiniz</h2>
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Sepetiniz boş.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Ürün</th>
+                <th>Fiyat</th>
+                <th>Adet</th>
+                <th>Toplam</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                var price = item.Price;
+                <tr>
+                    <td>@item.ProductName</td>
+                    <td>@price.ToString("0.00") ₺</td>
+                    <td>@item.Quantity</td>
+                    <td>@(price* item.Quantity) ₺</td>
+                    <td>
+                        <button class="btn btn-danger btn-sm btn-remove" data-productid="@item.ProductId">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            }
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <th colspan="3" class="text-end">Genel Toplam:</th>
+                            <th>
+                    @Model.Sum(i => i.Price * i.Quantity).ToString("0.00") ₺
+            </th>
+            <th></th>
+        </tr>
+    </tfoot>
+</table>
+
+    <button id="btnConfirmOrder"
+            class="btn btn-success"
+            data-cafeid="@ViewBag.CafeId"
+            data-tableid="@ViewBag.TableId"
+            data-categoryid="@ViewBag.CategoryId"
+            data-subcategoryid="@ViewBag.SubCategoryId">
+        Siparişi Onayla
+    </button>
+}
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script>
+        $(function () {
+            $(".btn-remove").click(function () {
+                var productId = $(this).data("productid");
+                $.post('/User/RemoveFromCart', { productId: productId }, function (res) {
+                    if (res.success) {
+                        location.reload();
+                    } else {
+                        alert("Ürün çıkarılamadı.");
+                    }
+                });
+            });
+
+            $("#btnConfirmOrder").click(function () {
+                var cafeId = $(this).data("cafeid");
+                var tableId = $(this).data("tableid");
+                var categoryId = $(this).data("categoryid");
+                var subCategoryId = $(this).data("subcategoryid");
+
+                $.post('/User/ConfirmOrder', {
+                    cafeId: cafeId,
+                    tableId: tableId,
+                    categoryId: categoryId,
+                    subCategoryId: subCategoryId
+                }, function (res) {
+                    if (res.success) {
+                        alert(res.message);
+                        window.location.href = '/User/UserMenuCategory/' + cafeId + '/' + tableId;
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            });
+        });
+    </script>
+}

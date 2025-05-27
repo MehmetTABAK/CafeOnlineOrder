@@ -1549,19 +1549,6 @@ th {
         text-decoration: underline;
     }
 
-/* Küçük Laptop (1024px ve daha küçük ekranlar) */
-@media (max-width: 1024px) {
-}
-
-/* Tablet (768px ve daha küçük ekranlar) */
-@media (max-width: 768px) {
-}
-
-/* Mobil (600px ve daha küçük ekranlar) */
-@media (max-width: 600px) {
-}
-
-
 /* Modal içerik genel stil */
 .modal-content {
     background-color: #f9f9f9;
@@ -1870,4 +1857,16 @@ input.form-control {
 
 .bg-light-bonus {
     background-color: #f8d789 !important;
+}
+
+/* Küçük Laptop (1024px ve daha küçük ekranlar) */
+@media (max-width: 1024px) {
+}
+
+/* Tablet (768px ve daha küçük ekranlar) */
+@media (max-width: 768px) {
+}
+
+/* Mobil (600px ve daha küçük ekranlar) */
+@media (max-width: 600px) {
 }

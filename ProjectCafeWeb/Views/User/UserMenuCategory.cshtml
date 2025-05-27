@@ -1,0 +1,26 @@
+﻿
+@{
+    ViewData["Title"] = "Menü Kategorileri";
+    Layout = "~/Views/Shared/_LayoutUser.cshtml";
+}
+
+@model IEnumerable<dynamic>
+
+<div class="container py-4">
+    <h2 class="text-center mb-4">Menü Kategorileri</h2>
+    <div class="row g-4">
+        @foreach (var category in Model)
+        {
+            <div class="col-md-4">
+                <a href="/User/UserSubMenuCategory/@ViewBag.CafeId/@ViewBag.TableId/@category.Id" class="text-decoration-none text-dark">
+                    <div class="card text-center shadow-sm category-card p-3">
+                        <img src="@category.CategoryImage" class="card-img-top" style="max-height:200px; object-fit:cover;" />
+                        <div class="card-body">
+                            <h5 class="card-title">@category.CategoryName</h5>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+</div>
