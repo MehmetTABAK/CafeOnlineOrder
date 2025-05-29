@@ -101,13 +101,13 @@ namespace ProjectCafeWeb.Controllers
 
 			var orders = _dbContext.Order
 				.Include(o => o.Product)
-				.Where(o => orderIds.Contains(o.Id) && o.Status != 4)
+				.Where(o => orderIds.Contains(o.Id) && o.Status == 3)
 				.ToList();
 
-			if (!orders.Any())
-				return BadRequest("Seçili ürünler bulunamadı.");
+			if (!orders.Any() || orderIds.Count != orders.Count)
+                return Json(new { success = false, message = "Teslim edildi durumunda olmayan ürünlerden ödeme alınamaz." });
 
-			var tableId = orders.First().TableId;
+            var tableId = orders.First().TableId;
 			var total = orders.Sum(o => o.Product.IsThereDiscount && o.Product.DiscountRate.HasValue
                             ? o.Product.Price * (1 - o.Product.DiscountRate.Value / 100.0)
                             : o.Product.Price);
@@ -150,8 +150,8 @@ namespace ProjectCafeWeb.Controllers
 
 			orders.ForEach(o => o.Status = 4);
 			_dbContext.SaveChanges();
-			return Ok();
-		}
+            return Json(new { success = true });
+        }
 
 		[AuthorizeWithPermission("Payment")]
 		[HttpPost]
@@ -165,13 +165,13 @@ namespace ProjectCafeWeb.Controllers
 
 			var unpaidOrders = _dbContext.Order
 				.Include(o => o.Product)
-				.Where(o => o.TableId == tableId && o.Status != 4 && o.Status != 6 && o.Status != 7 && o.Status != 8 && o.Active)
+				.Where(o => o.TableId == tableId && o.Status == 3 && o.Active)
 				.ToList();
 
 			if (!unpaidOrders.Any())
-				return BadRequest("Tüm ürünler zaten ödenmiş.");
+                return Json(new { success = false, message = "Teslim edildi durumunda olmayan ürünlerden ödeme alınamaz." });
 
-			var total = unpaidOrders.Sum(o => o.Product.IsThereDiscount && o.Product.DiscountRate.HasValue
+            var total = unpaidOrders.Sum(o => o.Product.IsThereDiscount && o.Product.DiscountRate.HasValue
                             ? o.Product.Price * (1 - o.Product.DiscountRate.Value / 100.0)
                             : o.Product.Price);
 
@@ -191,8 +191,8 @@ namespace ProjectCafeWeb.Controllers
 				order.Status = 4;
 
 			_dbContext.SaveChanges();
-			return Ok();
-		}
+            return Json(new { success = true });
+        }
 
 		[AuthorizeWithPermission("MoveTableAndOrders")]
 		[HttpPost]

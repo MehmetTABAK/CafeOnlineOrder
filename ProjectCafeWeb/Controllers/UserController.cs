@@ -15,7 +15,7 @@ namespace ProjectCafeWeb.Controllers
         {
         }
 
-        [Route("User/UserMenuCategory/{cafeId}/{tableId}")]
+        [Route("menu-kategori/{cafeId}/{tableId}")]
         public IActionResult UserMenuCategory(int cafeId, int tableId)
         {
             var categories = _dbContext.MenuCategory
@@ -33,7 +33,7 @@ namespace ProjectCafeWeb.Controllers
             return View(categories);
         }
 
-        [Route("User/UserSubMenuCategory/{cafeId}/{tableId}/{categoryId}")]
+        [Route("alt-menu-kategori/{cafeId}/{tableId}/{categoryId}")]
         public IActionResult UserSubMenuCategory(int categoryId, int cafeId, int tableId)
         {
             var subCategories = _dbContext.SubMenuCategory
@@ -53,7 +53,7 @@ namespace ProjectCafeWeb.Controllers
             return View(subCategories);
         }
 
-        [Route("User/UserProduct/{cafeId}/{tableId}/{categoryId}/{subCategoryId}")]
+        [Route("urunler/{cafeId}/{tableId}/{categoryId}/{subCategoryId}")]
         public IActionResult UserProduct(int subCategoryId, int cafeId, int tableId, int categoryId)
         {
             var products = _dbContext.Product
@@ -145,6 +145,7 @@ namespace ProjectCafeWeb.Controllers
             return Json(new { success = false });
         }
 
+        [Route("sepet")]
         public IActionResult Cart()
         {
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>("Cart") ?? new List<CartItem>();
@@ -165,6 +166,15 @@ namespace ProjectCafeWeb.Controllers
 
             if (cart == null || !cart.Any())
                 return Json(new { success = false, message = "Sepet boş." });
+
+            // 📌 Aktif bir DailyReport var mı kontrol et
+            var activeReport = _dbContext.DailyReport
+                .FirstOrDefault(r => r.CafeId == cafeId && r.EndTime == null);
+
+            if (activeReport == null)
+            {
+                return Json(new { success = false, message = "Sistem henüz başlatılmadı. Garsona bilgi verebilirsiniz!" });
+            }
 
             foreach (var item in cart)
             {
@@ -207,7 +217,7 @@ namespace ProjectCafeWeb.Controllers
             {
                 success = true,
                 message = "Sipariş başarıyla oluşturuldu.",
-                redirectUrl = Url.Action("UserMenuCategory", new { cafeId, tableId })
+                redirectUrl = Url.Action("menu-kategori", new { cafeId, tableId })
             });
         }
     }

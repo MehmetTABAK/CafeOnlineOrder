@@ -516,9 +516,13 @@
                 cashAmount: cash.toString().replace(',', '.')
             };
 
-            $.post('/Table/PaySelectedOrdersSplit', payload, function () {
-                $('#paymentMethodModal').modal('hide');
-                loadTableDetails(selectedTableId);
+            $.post('/Table/PaySelectedOrdersSplit', payload, function (response) {
+                if (response.success) {
+                    $('#paymentMethodModal').modal('hide');
+                    loadTableDetails(selectedTableId);
+                } else {
+                    alert(response.message);
+                }
             });
         });
 
@@ -555,15 +559,24 @@
         });
 
         $('#payCardBtn').click(() => {
-            $.post('/Table/CompletePayment', { tableId: selectedTableId, method: 1 }, function () {
-                localStorage.setItem('openModalTableId', selectedTableId);
-                location.reload();
+            $.post('/Table/CompletePayment', { tableId: selectedTableId, method: 1 }, function (response) {
+                if(response.success) {
+                    loadTableDetails(selectedTableId);
+                }
+                else {
+                    alert(response.message);
+                }
             });
         });
 
         $('#payCashBtn').click(() => {
-            $.post('/Table/CompletePayment', { tableId: selectedTableId, method: 2 }, function () {
-                loadTableDetails(selectedTableId);
+            $.post('/Table/CompletePayment', { tableId: selectedTableId, method: 2 }, function (response) {
+                if(response.success) {
+                    loadTableDetails(selectedTableId);
+                }
+                else {
+                    alert(response.message);
+                }
             });
         });
 
@@ -573,7 +586,7 @@
             }).get();
 
             let total = $('.order-checkbox:checked').toArray().reduce((sum, el) => sum + parseFloat($(el).data('price')), 0);
-            $('#selectedAmount').text(total);
+            $('#selectedAmount').text(total.toFixed(2));
             const hasSelection = selectedOrderIds.length > 0;
             $('#partialPayBtn').prop('disabled', !hasSelection);
             $('#moveSelectedOrdersBtn').prop('disabled', !hasSelection);
@@ -821,7 +834,7 @@
                 $('#productCheckboxList').html(html);
             });
         });
-                
+
         $(document).on('input', '.product-quantity', function () {
             const max = parseInt($(this).attr('max'));
             let val = parseInt($(this).val());
