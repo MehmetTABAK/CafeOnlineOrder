@@ -180,7 +180,19 @@ namespace ProjectCafeWeb.Controllers
 			worker.CorrectionUser = userId.Value;
 			worker.CorrectionUserRole = userRole;
 			worker.CorrectionDate = DateTime.Now;
-			_dbContext.SaveChanges();
+
+			var workerNotification = _dbContext.NotificationSubscription
+				.FirstOrDefault(ns => ns.WorkerId == workerId && ns.Active == true);
+
+            if (workerNotification != null)
+            {
+				workerNotification.Active = false;
+				workerNotification.CorrectionUser = userId.Value;
+				workerNotification.CorrectionUserRole = userRole;
+				workerNotification.CorrectionDate = DateTime.Now;
+            }
+
+            _dbContext.SaveChanges();
 
 			return Json(new { success = true, message = "Çalışan silindi!" });
 		}

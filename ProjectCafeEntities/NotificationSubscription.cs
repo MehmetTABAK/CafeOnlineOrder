@@ -6,17 +6,14 @@ using System.Threading.Tasks;
 
 namespace ProjectCafeEntities
 {
-	public class Worker
-	{
+	public class NotificationSubscription
+    {
 		public int Id { get; set; }
-		public int CafeId { get; set; }
-		public string Firstname { get; set; }
-		public string Lastname { get; set; }
-		public string? Image { get; set; }
-		public string Email { get; set; }
-		public string Password { get; set; }
-		public string? RolePermissions { get; set; }
-		public bool Active { get; set; }
+		public int WorkerId { get; set; }
+        public string Endpoint { get; set; }
+        public string P256dh { get; set; }
+        public string Auth { get; set; }
+        public bool Active { get; set; }
 		public int RegistrationUser { get; set; }
 		public string RegistrationUserRole { get; set; }
 		public DateTime RegistrationDate { get; set; }
@@ -24,7 +21,6 @@ namespace ProjectCafeEntities
 		public string? CorrectionUserRole { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 
-		public virtual Cafe? Cafe { get; set; }
-        public virtual ICollection<NotificationSubscription>? NotificationSubscriptions { get; set; }
+		public virtual Worker? Worker { get; set; }
     }
 }

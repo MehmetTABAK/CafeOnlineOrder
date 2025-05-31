@@ -101,3 +101,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initBlogPage();
 });
+
+document.addEventListener('DOMContentLoaded', () => {
+    const publicKeyUrl = '/Notification/PublicKey';
+
+    async function registerServiceWorkerAndSubscribe() {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.warn("Push mesajları desteklenmiyor.");
+            return;
+        }
+
+        const registration = await navigator.serviceWorker.register('/js/service-worker.js');
+
+        const publicKeyResponse = await fetch(publicKeyUrl);
+        const publicKey = await publicKeyResponse.text();
+
+        const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicKey)
+        });
+
+        const p256dhKey = subscription.getKey('p256dh');
+        const authKey = subscription.getKey('auth');
+
+        const p256dh = p256dhKey ? btoa(String.fromCharCode(...new Uint8Array(p256dhKey))) : null;
+        const auth = authKey ? btoa(String.fromCharCode(...new Uint8Array(authKey))) : null;
+
+        // Aboneliği sunucuya gönder
+        await fetch('/Notification/Subscribe', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                Endpoint: subscription.endpoint,
+                P256dh: p256dh,
+                Auth: auth
+            })
+        });
+    }
+
+    // Base64 public key decode fonksiyonu
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = atob(base64);
+        return Uint8Array.from([...rawData].map(char => char.charCodeAt(0)));
+    }
+
+    // Sayfa yüklendiğinde başlat
+    window.addEventListener('load', () => {
+        registerServiceWorkerAndSubscribe();
+    });
+});

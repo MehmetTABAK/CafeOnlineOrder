@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectCafeDataAccess;
+using ProjectCafeWeb.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,6 +20,7 @@ builder.Services.AddAuthentication("cookieAuth")
 builder.Services.AddAuthorization();
 builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<NotificationService>();
 
 var app = builder.Build();
 

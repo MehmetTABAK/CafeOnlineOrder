@@ -676,9 +676,6 @@
             const sectionName = this.getAttribute('data-table-sections-name');
             const sectionId = this.getAttribute('data-table-sections-id');
 
-            console.log("sectionName", sectionName);
-            console.log("sectionId", sectionId);
-
             document.getElementById('sectionName').value = sectionName;
             document.getElementById('sectionId').value = sectionId;
 
@@ -703,16 +700,12 @@
         const name = document.getElementById('table-name-input').value;
         const sectionId = parseInt(document.getElementById('sectionId').value);
 
-        console.log("sectionId2", sectionId);
-
         const payload = {
             id: mode === 'edit' ? parseInt(id) : 0,
             sectionId: sectionId,
             name: name,
             active: true
         };
-
-        console.log(payload);
 
         const endpoint = mode === 'edit' ? '/Profile/UpdateTable' : '/Profile/AddTable';
 

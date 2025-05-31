@@ -5,14 +5,16 @@ using ProjectCafeDataAccess;
 using ProjectCafeEntities;
 using ProjectCafeWeb.Helpers;
 using ProjectCafeWeb.Models;
+using ProjectCafeWeb.Services;
 
 namespace ProjectCafeWeb.Controllers
 {
     public class UserController : BaseController
     {
-
-        public UserController(ProjectCafeDbContext dbContext) : base(dbContext)
+        private readonly NotificationService _notificationService;
+        public UserController(ProjectCafeDbContext dbContext, NotificationService notificationService) : base(dbContext)
         {
+            _notificationService = notificationService;
         }
 
         [Route("menu-kategori/{cafeId}/{tableId}")]
@@ -160,7 +162,7 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult ConfirmOrder(int cafeId, int tableId)
+        public async Task<IActionResult> ConfirmOrder(int cafeId, int tableId)
         {
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>("Cart");
 
@@ -174,6 +176,16 @@ namespace ProjectCafeWeb.Controllers
             if (activeReport == null)
             {
                 return Json(new { success = false, message = "Sistem henüz başlatılmadı. Garsona bilgi verebilirsiniz!" });
+            }
+
+            // Masa ve bölüm bilgilerini al
+            var table = _dbContext.Table
+                .Include(t => t.Section) // Section bilgisini include ediyoruz
+                .FirstOrDefault(t => t.Id == tableId && t.Active);
+
+            if (table == null)
+            {
+                return Json(new { success = false, message = "Masa bulunamadı." });
             }
 
             foreach (var item in cart)
@@ -212,6 +224,12 @@ namespace ProjectCafeWeb.Controllers
 
             _dbContext.SaveChanges();
             HttpContext.Session.Remove("Cart");
+
+            // Bildirim mesajını oluştur
+            string notificationMessage = $"{table.Section?.Name} bölümündeki {table.Name} masasından sipariş girişi gerçekleşti.";
+
+            // Bildirim gönder
+            await _notificationService.SendPushToGarsons(cafeId, "Yeni Sipariş", notificationMessage);
 
             return Json(new
             {
