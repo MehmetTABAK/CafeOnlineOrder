@@ -238,6 +238,35 @@ namespace ProjectCafeWeb.Controllers
 			return Ok();
 		}
 
+        [AuthorizeWithPermission("TurnOfNotification")]
+        [HttpPost]
+        public IActionResult UpdateNotification([FromBody] JsonElement request)
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var cafeId = GetCurrentCafeId();
+            if (userId == null || cafeId == null)
+                return Unauthorized();
+
+            var tableId = request.GetProperty("id").GetInt32();
+            var notificationStatus = request.GetProperty("notification").GetBoolean();
+
+            var table = _dbContext.Table
+                .Include(p => p.Section).ThenInclude(mc => mc.Cafe)
+                .FirstOrDefault(p => p.Id == tableId && p.Section.Cafe.Id == cafeId);
+
+            if (table == null)
+                return Json(new { success = false, message = "Masa bulunamadı veya yetkiniz yok." });
+
+            table.Notification = notificationStatus;
+            table.CorrectionUser = userId.Value;
+            table.CorrectionUserRole = userRole;
+            table.CorrectionDate = DateTime.Now;
+
+            _dbContext.SaveChanges();
+            return Json(new { success = true });
+        }
+
         [AuthorizeWithPermission("CloseTable")]
         [HttpPost]
         public IActionResult CloseTable([FromBody] Table table)

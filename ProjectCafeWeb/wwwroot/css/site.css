@@ -1859,6 +1859,69 @@ input.form-control {
     background-color: #f8d789 !important;
 }
 
+/*------ Settings ------*/
+.notification-container {
+    --color: #a5a5b0;
+    --size: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    font-size: var(--size);
+    user-select: none;
+    fill: var(--color);
+}
+
+    .notification-container .bell-regular {
+        position: absolute;
+        animation: keyframes-fill 0.5s;
+    }
+
+    .notification-container .bell-solid {
+        position: absolute;
+        display: none;
+        animation: keyframes-fill 0.5s;
+        color: red;
+    }
+
+    /* ------ On check event ------ */
+    .notification-container input:checked ~ .bell-regular {
+        display: none;
+    }
+
+    .notification-container input:checked ~ .bell-solid {
+        display: block;
+    }
+
+    /* ------ Hide the default checkbox ------ */
+    .notification-container input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+        height: 0;
+        width: 0;
+    }
+
+/* ------ Animation ------ */
+@keyframes keyframes-fill {
+    0% {
+        opacity: 0;
+    }
+
+    25% {
+        transform: rotate(25deg);
+    }
+
+    50% {
+        transform: rotate(-20deg) scale(1.2);
+    }
+
+    75% {
+        transform: rotate(15deg);
+    }
+}
+
 /* Küçük Laptop (1024px ve daha küçük ekranlar) */
 @media (max-width: 1024px) {
 }

@@ -376,10 +376,9 @@ namespace ProjectCafeWeb.Controllers
 
             if (ModelState.IsValid)
 			{
-				table.RegistrationUser = userId.Value;
+                table.RegistrationUser = userId.Value;
 				table.RegistrationUserRole = userRole;
 				table.RegistrationDate = DateTime.Now;
-				table.Active = true;
 
 				_dbContext.Table.Add(table);
 				await _dbContext.SaveChangesAsync();

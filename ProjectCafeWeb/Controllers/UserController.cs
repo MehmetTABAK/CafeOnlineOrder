@@ -225,11 +225,14 @@ namespace ProjectCafeWeb.Controllers
             _dbContext.SaveChanges();
             HttpContext.Session.Remove("Cart");
 
-            // Bildirim mesajını oluştur
-            string notificationMessage = $"{table.Section?.Name} bölümündeki {table.Name} masasından sipariş girişi gerçekleşti.";
+            if (table.Active && table.Notification)
+            {
+                // Bildirim mesajını oluştur
+                string notificationMessage = $"{table.Section?.Name} bölümündeki {table.Name} masasından sipariş girişi gerçekleşti.";
 
-            // Bildirim gönder
-            await _notificationService.SendPushToGarsons(cafeId, "Yeni Sipariş", notificationMessage);
+                // Bildirim gönder
+                await _notificationService.SendPushToGarsons(cafeId, "Yeni Sipariş", notificationMessage);
+            }
 
             return Json(new
             {

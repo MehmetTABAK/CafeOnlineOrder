@@ -11,6 +11,7 @@ namespace ProjectCafeEntities
 		public int Id { get; set; }
 		public int SectionId { get; set; }
 		public string Name { get; set; }
+		public bool Notification { get; set; }
 		public bool Active { get; set; }
 		public int RegistrationUser { get; set; }
 		public string RegistrationUserRole { get; set; }
