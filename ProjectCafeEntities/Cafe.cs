@@ -13,6 +13,7 @@ namespace ProjectCafeEntities
 		public string Name { get; set; }
 		public string? Image { get; set; }
 		public string Location { get; set; }
+		public string? AllowedIpPrefix { get; set; }
 		public bool Active { get; set; }
 		public int RegistrationUser { get; set; }
 		public string RegistrationUserRole { get; set; }
