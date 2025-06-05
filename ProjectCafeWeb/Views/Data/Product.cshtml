@@ -338,11 +338,11 @@
         const discount = hasDiscount ? document.getElementById('discount-amount').value : 0;
         const imageSrc = document.getElementById('preview').src;
 
-        const menuCategoryId = parseInt(document.getElementById('menuCategoryId').value);
-        const subMenuCategoryId = parseInt(document.getElementById('subMenuCategoryId').value);
+        const menuCategoryId = document.getElementById('menuCategoryId').value;
+        const subMenuCategoryId = document.getElementById('subMenuCategoryId').value;
 
         const payload = {
-            id: mode === 'edit' ? parseInt(id) : 0,
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
             name,
             price: parseFloat(price),
             stockCount: stockCount || null,
@@ -393,7 +393,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: parseInt(productId), stock: isChecked })
+                body: JSON.stringify({ id: productId, stock: isChecked })
             })
                 .then(response => response.json())
                 .then(data => {
@@ -420,7 +420,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: parseInt(productId) })
+                body: JSON.stringify({ id: productId })
             })
                 .then(response => response.json())
                 .then(data => {

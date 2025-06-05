@@ -97,7 +97,7 @@ namespace ProjectCafeWeb.Controllers
 				.Select(c => c.Id)
 				.FirstOrDefault();
 
-			if (cafeIds == 0)
+			if (cafeIds == null)
 				return Json(new { success = false, message = "Kafe bulunamadı!" });
 
             ModelState.Remove(nameof(worker.RegistrationUserRole));
@@ -167,9 +167,9 @@ namespace ProjectCafeWeb.Controllers
 			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			var workerId = request.GetProperty("id").GetInt32();
+			var workerId = Guid.Parse(request.GetProperty("id").GetString());
 
-			var worker = _dbContext.Worker
+            var worker = _dbContext.Worker
 				.Include(mc => mc.Cafe)
 				.FirstOrDefault(mc => mc.Id == workerId && mc.Cafe.Id == cafeId);
 
@@ -264,22 +264,36 @@ namespace ProjectCafeWeb.Controllers
 				.Select(c => c.Id)
 				.FirstOrDefault();
 
-			if (cafeIds == 0)
+			if (cafeIds == null)
 				return Json(new { success = false, message = "Bölüm bulunamadı!" });
 
             ModelState.Remove(nameof(section.RegistrationUserRole));
 
             if (ModelState.IsValid)
 			{
+				section.Id = Guid.NewGuid();
 				section.CafeId = cafeIds;
 				section.RegistrationUser = userId.Value;
 				section.RegistrationUserRole = userRole;
 				section.RegistrationDate = DateTime.Now;
 				section.Active = true;
 
-				_dbContext.Section.Add(section);
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Bölüm başarıyla eklendi!" });
+                try
+                {
+                    _dbContext.Section.Add(section);
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Bölüm başarıyla eklendi!" });
+                }
+                catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+                {
+                    // Guid çakışması durumunda tekrar dene
+                    return await AddSection(section); // Recursive çağrı (dikkatli kullanın)
+                }
+                catch (Exception ex)
+                {
+                    // Diğer hatalar
+                    return Json(new { success = false, message = $"Bölüm eklenemedi: {ex.Message}" });
+                }
 			}
 			return Json(new { success = false, message = "Bölüm eklenemedi!" });
 		}
@@ -311,8 +325,15 @@ namespace ProjectCafeWeb.Controllers
 				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Bölüm başarıyla güncellendi!" });
+				try
+				{
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Bölüm başarıyla güncellendi!" });
+                }
+				catch (Exception ex)
+				{
+                    return Json(new { success = false, message = $"Bölüm güncellenemedi: {ex.Message}" });
+                }
 			}
 			return Json(new { success = false, message = "Bölüm güncellenemedi!" });
 		}
@@ -327,9 +348,9 @@ namespace ProjectCafeWeb.Controllers
 			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			int sectionId = request.GetProperty("id").GetInt32();
+			var sectionId = Guid.Parse(request.GetProperty("id").GetString());
 
-			var section = _dbContext.Section
+            var section = _dbContext.Section
 				.Include(s => s.Cafe)
 				.Include(sc => sc.Tables)
 				.FirstOrDefault(s => s.Id == sectionId && s.Cafe.Id == cafeId);
@@ -350,9 +371,15 @@ namespace ProjectCafeWeb.Controllers
 				table.CorrectionDate = DateTime.Now;
 			}
 
-			_dbContext.SaveChanges();
-
-			return Json(new { success = true, message = "Bölüm ve bölüme ait masalar silindi!" });
+			try
+			{
+                _dbContext.SaveChanges();
+                return Json(new { success = true, message = "Bölüm ve bölüme ait masalar silindi!" });
+            }
+			catch (Exception ex)
+			{
+                return Json(new { success = false, message = $"Bölüm ve bölüme ait masalar silinemedi: {ex.Message}" });
+            }
 		}
 
 		[AuthorizeWithPermission("AddTable")]
@@ -376,14 +403,28 @@ namespace ProjectCafeWeb.Controllers
 
             if (ModelState.IsValid)
 			{
+				table.Id = Guid.NewGuid();
                 table.RegistrationUser = userId.Value;
 				table.RegistrationUserRole = userRole;
 				table.RegistrationDate = DateTime.Now;
 
-				_dbContext.Table.Add(table);
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Masa başarıyla eklendi!" });
-			}
+				try
+				{
+                    _dbContext.Table.Add(table);
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Masa başarıyla eklendi!" });
+                }
+                catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+                {
+                    // Guid çakışması durumunda tekrar dene
+                    return await AddTable(table); // Recursive çağrı (dikkatli kullanın)
+                }
+                catch (Exception ex)
+                {
+                    // Diğer hatalar
+                    return Json(new { success = false, message = $"Masa eklenemedi: {ex.Message}" });
+                }
+            }
 
 			return Json(new { success = false, message = "Masa eklenemedi!" });
 		}
@@ -415,8 +456,15 @@ namespace ProjectCafeWeb.Controllers
 				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Masa güncellendi!" });
+				try
+				{
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Masa güncellendi!" });
+                }
+				catch (Exception ex)
+				{
+                    return Json(new { success = false, message = $"Masa güncellenemedi: {ex.Message}" });
+                }
 			}
 			return Json(new { success = false, message = "Masa güncellenemedi!" });
 		}
@@ -431,9 +479,9 @@ namespace ProjectCafeWeb.Controllers
 			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			int tableId = request.GetProperty("id").GetInt32();
+			var tableId = Guid.Parse(request.GetProperty("id").GetString());
 
-			var table = _dbContext.Table
+            var table = _dbContext.Table
 				.Include(t => t.Section)
 				.ThenInclude(s => s.Cafe)
 				.FirstOrDefault(t => t.Id == tableId && t.Section.Cafe.Id == cafeId);
@@ -446,9 +494,15 @@ namespace ProjectCafeWeb.Controllers
 			table.CorrectionUserRole = userRole;
 			table.CorrectionDate = DateTime.Now;
 
-			_dbContext.SaveChanges();
-
-			return Json(new { success = true, message = "Masa silindi!" });
+			try
+			{
+                _dbContext.SaveChanges();
+                return Json(new { success = true, message = "Masa silindi!" });
+            }
+			catch (Exception ex)
+			{
+                return Json(new { success = false, message = $"Masa silinemedi: {ex.Message}" });
+            }
 		}
 	}
 }

@@ -48,21 +48,36 @@ namespace ProjectCafeWeb.Controllers
 				.Select(c => c.Id)
 				.FirstOrDefault();
 
-			if (cafeIds == 0)
+			if (cafeIds == null)
 				return Json(new { success = false, message = "Kafe bulunamadı!" });
 
             ModelState.Remove(nameof(menuCategory.RegistrationUserRole));
 
             if (ModelState.IsValid)
 			{
-				menuCategory.CafeId = cafeIds;
+                menuCategory.Id = Guid.NewGuid();
+                menuCategory.CafeId = cafeIds;
 				menuCategory.RegistrationUser = userId.Value;
 				menuCategory.RegistrationUserRole = userRole;
 				menuCategory.RegistrationDate = DateTime.Now;
-				// Ürünü veritabanına kaydet
-				_dbContext.MenuCategory.Add(menuCategory);
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Üst menü başarıyla eklendi!" });
+
+                try
+                {
+                    // Ürünü veritabanına kaydet
+                    _dbContext.MenuCategory.Add(menuCategory);
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Üst menü başarıyla eklendi!" });
+                }
+                catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+                {
+                    // Guid çakışması durumunda tekrar dene
+                    return await AddMenuCategory(menuCategory); // Recursive çağrı (dikkatli kullanın)
+                }
+                catch (Exception ex)
+                {
+                    // Diğer hatalar
+                    return Json(new { success = false, message = $"Üst menü eklenemedi: {ex.Message}" });
+                }
 			}
 			return Json(new { success = false, message = "Üst menü eklenemedi!" });
 		}
@@ -94,8 +109,15 @@ namespace ProjectCafeWeb.Controllers
 				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Üst menü başarıyla güncellendi!" });
+				try
+				{
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Üst menü başarıyla güncellendi!" });
+                }
+				catch (Exception ex)
+				{
+                    return Json(new { success = false, message = $"Üst menü güncellenemedi: {ex.Message}" });
+                }
 			}
 			return Json(new { success = false, message = "Üst menü güncellenemedi!" });
 		}
@@ -110,9 +132,9 @@ namespace ProjectCafeWeb.Controllers
 			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			var menuCategoryId = request.GetProperty("id").GetInt32();
+			var menuCategoryId = Guid.Parse(request.GetProperty("id").GetString());
 
-			var menuCategory = _dbContext.MenuCategory
+            var menuCategory = _dbContext.MenuCategory
 				.Include(mc => mc.Cafe)
 				.Include(mc => mc.SubMenuCategories)
 					.ThenInclude(sc => sc.Products)
@@ -143,9 +165,15 @@ namespace ProjectCafeWeb.Controllers
 				}
 			}
 
-			_dbContext.SaveChanges();
-
-			return Json(new { success = true, message = "Üst menü ve bağlı alt menüler ile ürünler pasifleştirildi!" });
+			try
+			{
+                _dbContext.SaveChanges();
+                return Json(new { success = true, message = "Üst menü ve bağlı alt menüler ile ürünler pasifleştirildi!" });
+            }
+			catch (Exception ex)
+			{
+                return Json(new { success = false, message = $"Üst menü ve bağlı alt menüler ile ürünler pasifleştirilemedi: {ex.Message}" });
+            }
 		}
 
 		[AuthorizeWithPermission("ViewSubMenuCategory")]
@@ -198,14 +226,29 @@ namespace ProjectCafeWeb.Controllers
 
             if (ModelState.IsValid)
 			{
+				subMenuCategory.Id = Guid.NewGuid();
 				subMenuCategory.RegistrationUser = userId.Value;
 				subMenuCategory.RegistrationUserRole = userRole;
 				subMenuCategory.RegistrationDate = DateTime.Now;
 				subMenuCategory.Active = true;
-				// Ürünü veritabanına kaydet
-				_dbContext.SubMenuCategory.Add(subMenuCategory);
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Alt menü başarıyla eklendi!" });
+
+                try
+                {
+                    // Ürünü veritabanına kaydet
+                    _dbContext.SubMenuCategory.Add(subMenuCategory);
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Alt menü başarıyla eklendi!" });
+                }
+                catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+                {
+                    // Guid çakışması durumunda tekrar dene
+                    return await AddSubMenuCategory(subMenuCategory); // Recursive çağrı (dikkatli kullanın)
+                }
+                catch (Exception ex)
+                {
+                    // Diğer hatalar
+                    return Json(new { success = false, message = $"Alt menü eklenemedi: {ex.Message}" });
+                }
 			}
 
 			return Json(new { success = false, message = "Alt menü eklenemedi!" });
@@ -239,8 +282,15 @@ namespace ProjectCafeWeb.Controllers
 				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Alt menü başarıyla güncellendi!" });
+				try
+				{
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Alt menü başarıyla güncellendi!" });
+                }
+				catch (Exception ex)
+				{
+                    return Json(new { success = false, message = $"Alt menü güncellenemedi: {ex.Message}" });
+                }
 			}
 			return Json(new { success = false, message = "Alt menü güncellenemedi!" });
 		}
@@ -255,9 +305,9 @@ namespace ProjectCafeWeb.Controllers
 			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			var subMenuCategoryId = request.GetProperty("id").GetInt32();
+			var subMenuCategoryId = Guid.Parse(request.GetProperty("id").GetString());
 
-			var subMenuCategory = _dbContext.SubMenuCategory
+            var subMenuCategory = _dbContext.SubMenuCategory
 				.Include(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
 				.Include(sc => sc.Products)
 				.FirstOrDefault(sc => sc.Id == subMenuCategoryId && sc.MenuCategory.Cafe.Id == userId);
@@ -279,9 +329,15 @@ namespace ProjectCafeWeb.Controllers
 				product.CorrectionDate = DateTime.Now;
 			}
 
-			_dbContext.SaveChanges();
-
-			return Json(new { success = true, message = "Alt menü ve ürünler pasifleştirildi!" });
+			try
+			{
+                _dbContext.SaveChanges();
+                return Json(new { success = true, message = "Alt menü ve ürünler pasifleştirildi!" });
+            }
+			catch (Exception ex)
+			{
+                return Json(new { success = false, message = $"Alt menü ve ürünler pasifleştirilemedi: {ex.Message}" });
+            }
 		}
 
 		[AuthorizeWithPermission("ViewProduct")]
@@ -343,15 +399,29 @@ namespace ProjectCafeWeb.Controllers
 
             if (ModelState.IsValid)
 			{
+				product.Id = Guid.NewGuid();
 				product.RegistrationUser = userId.Value;
 				product.RegistrationUserRole = userRole;
 				product.RegistrationDate = DateTime.Now;
 				product.Active = true;
 
-				_dbContext.Product.Add(product);
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Ürün başarıyla eklendi!" });
-			}
+				try
+				{
+                    _dbContext.Product.Add(product);
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Ürün başarıyla eklendi!" });
+                }
+                catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+                {
+                    // Guid çakışması durumunda tekrar dene
+                    return await AddProduct(product); // Recursive çağrı (dikkatli kullanın)
+                }
+                catch (Exception ex)
+                {
+                    // Diğer hatalar
+                    return Json(new { success = false, message = $"Ürün eklenemedi: {ex.Message}" });
+                }
+            }
 
 			return Json(new { success = false, message = "Ürün eklenemedi!" });
 		}
@@ -389,8 +459,15 @@ namespace ProjectCafeWeb.Controllers
 				existing.CorrectionUserRole = userRole;
 				existing.CorrectionDate = DateTime.Now;
 
-				await _dbContext.SaveChangesAsync();
-				return Json(new { success = true, message = "Ürün başarıyla güncellendi!" });
+				try
+				{
+                    await _dbContext.SaveChangesAsync();
+                    return Json(new { success = true, message = "Ürün başarıyla güncellendi!" });
+                }
+				catch (Exception ex)
+				{
+                    return Json(new { success = false, message = $"Ürün güncellenemedi: {ex.Message}" });
+                }
 			}
 
 			return Json(new { success = false, message = "Ürün güncellenemedi!" });
@@ -406,8 +483,8 @@ namespace ProjectCafeWeb.Controllers
 			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			var productId = request.GetProperty("id").GetInt32();
-			var stockStatus = request.GetProperty("stock").GetBoolean();
+			var productId = Guid.Parse(request.GetProperty("id").GetString());
+            var stockStatus = request.GetProperty("stock").GetBoolean();
 
 			var product = _dbContext.Product
 				.Include(p => p.SubMenuCategory).ThenInclude(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
@@ -421,8 +498,15 @@ namespace ProjectCafeWeb.Controllers
 			product.CorrectionUserRole = userRole;
 			product.CorrectionDate = DateTime.Now;
 
-			_dbContext.SaveChanges();
-			return Json(new { success = true });
+            try
+            {
+                _dbContext.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Stok güncellenemedi: {ex.Message}" });
+            }
 		}
 
 		[AuthorizeWithPermission("DeleteProduct")]
@@ -435,9 +519,9 @@ namespace ProjectCafeWeb.Controllers
 			if (userId == null || cafeId == null)
 				return Unauthorized();
 
-			var productId = request.GetProperty("id").GetInt32();
+			var productId = Guid.Parse(request.GetProperty("id").GetString());
 
-			var product = _dbContext.Product
+            var product = _dbContext.Product
 				.Include(p => p.SubMenuCategory).ThenInclude(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
 				.FirstOrDefault(p => p.Id == productId && p.SubMenuCategory.MenuCategory.Cafe.Id == cafeId);
 
@@ -449,8 +533,15 @@ namespace ProjectCafeWeb.Controllers
 			product.CorrectionUserRole = userRole;
 			product.CorrectionDate = DateTime.Now;
 
-			_dbContext.SaveChanges();
-			return Json(new { success = true, message = "Ürün başarıyla silindi!" });
+            try
+            {
+                _dbContext.SaveChanges();
+                return Json(new { success = true, message = "Ürün başarıyla silindi!" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Ürün silinemedi: {ex.Message}" });
+            }
 		}
 	}
 }

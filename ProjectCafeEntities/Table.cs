@@ -8,15 +8,15 @@ namespace ProjectCafeEntities
 {
 	public class Table
 	{
-		public int Id { get; set; }
-		public int SectionId { get; set; }
+		public Guid Id { get; set; }
+		public Guid SectionId { get; set; }
 		public string Name { get; set; }
 		public bool Notification { get; set; }
 		public bool Active { get; set; }
-		public int RegistrationUser { get; set; }
+		public Guid RegistrationUser { get; set; }
 		public string RegistrationUserRole { get; set; }
 		public DateTime RegistrationDate { get; set; }
-		public int? CorrectionUser { get; set; }
+		public Guid? CorrectionUser { get; set; }
 		public string? CorrectionUserRole { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 

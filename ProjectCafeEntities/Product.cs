@@ -8,9 +8,9 @@ namespace ProjectCafeEntities
 {
 	public class Product
 	{
-		public int Id { get; set; }
-		public int MenuCategoryId { get; set; }
-		public int? SubMenuCategoryId { get; set; }
+		public Guid Id { get; set; }
+		public Guid MenuCategoryId { get; set; }
+		public Guid? SubMenuCategoryId { get; set; }
 		public string Name { get; set; }
 		public string? Image { get; set; }
 		public double Price { get; set; }
@@ -19,10 +19,10 @@ namespace ProjectCafeEntities
 		public bool IsThereDiscount { get; set; }
 		public double? DiscountRate { get; set; }
 		public bool Active { get; set; }
-		public int RegistrationUser { get; set; }
+		public Guid RegistrationUser { get; set; }
 		public string RegistrationUserRole { get; set; }
 		public DateTime RegistrationDate { get; set; }
-		public int? CorrectionUser { get; set; }
+		public Guid? CorrectionUser { get; set; }
 		public string? CorrectionUserRole { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 

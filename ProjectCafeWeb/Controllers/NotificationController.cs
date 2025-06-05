@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using ProjectCafeDataAccess;
 using ProjectCafeEntities;
@@ -35,6 +36,7 @@ namespace ProjectCafeWeb.Controllers
                 // Kayıt yoksa yeni kayıt oluştur
                 var subscription = new NotificationSubscription
                 {
+                    Id = Guid.NewGuid(),
                     WorkerId = userId.Value,
                     Endpoint = model.Endpoint,
                     P256dh = model.P256dh,
@@ -45,7 +47,20 @@ namespace ProjectCafeWeb.Controllers
                     RegistrationDate = DateTime.Now,
                 };
 
-                _dbContext.NotificationSubscription.Add(subscription);
+                try
+                {
+                    _dbContext.NotificationSubscription.Add(subscription);
+                }
+                catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+                {
+                    // Guid çakışması durumunda tekrar dene
+                    return await Subscribe(model); // Recursive çağrı (dikkatli kullanın)
+                }
+                catch (Exception ex)
+                {
+                    // Diğer hatalar
+                    return Json(new { success = false, message = $"Bildirim sistemine kayıt yapılamadı: {ex.Message}" });
+                }
             }
             else
             {
@@ -62,8 +77,15 @@ namespace ProjectCafeWeb.Controllers
                 // Aksi halde zaten güncel, hiçbir şey yapma
             }
 
-            await _dbContext.SaveChangesAsync();
-            return Ok();
+            try
+            {
+                await _dbContext.SaveChangesAsync();
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Bildirim sistemine kayıt yapılamadı: {ex.Message}" });
+            }
         }
 
 

@@ -8,17 +8,17 @@ namespace ProjectCafeEntities
 {
 	public class Cafe
 	{
-		public int Id { get; set; }
-		public int AdminId { get; set; }
+		public Guid Id { get; set; }
+		public Guid AdminId { get; set; }
 		public string Name { get; set; }
 		public string? Image { get; set; }
 		public string Location { get; set; }
 		public string? AllowedIpPrefix { get; set; }
 		public bool Active { get; set; }
-		public int RegistrationUser { get; set; }
+		public Guid RegistrationUser { get; set; }
 		public string RegistrationUserRole { get; set; }
 		public DateTime RegistrationDate { get; set; }
-		public int? CorrectionUser { get; set; }
+		public Guid? CorrectionUser { get; set; }
 		public string? CorrectionUserRole { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 

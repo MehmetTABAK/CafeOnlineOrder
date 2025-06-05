@@ -16,7 +16,7 @@ namespace ProjectCafeWeb.Services
             _configuration = configuration;
         }
 
-        public async Task SendPushToGarsons(int cafeId, string title, string message)
+        public async Task SendPushToGarsons(Guid cafeId, string title, string message)
         {
             var garsonSubs = _dbContext.NotificationSubscription
                 .Where(x => x.Worker.CafeId == cafeId && x.Active)

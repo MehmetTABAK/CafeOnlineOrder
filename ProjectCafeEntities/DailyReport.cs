@@ -8,8 +8,8 @@ namespace ProjectCafeEntities
 {
     public class DailyReport
     {
-        public int Id { get; set; }
-        public int CafeId { get; set; }
+        public Guid Id { get; set; }
+        public Guid CafeId { get; set; }
         public DateTime StartTime { get; set; }
         public DateTime? EndTime { get; set; }
         public double? TotalAmount { get; set; }
@@ -18,10 +18,10 @@ namespace ProjectCafeEntities
         public double? TotalBonus { get; set; }
         public double? TotalRefund { get; set; }
         public bool Active { get; set; }
-        public int RegistrationUser { get; set; }
+        public Guid RegistrationUser { get; set; }
         public string RegistrationUserRole { get; set; }
         public DateTime RegistrationDate { get; set; }
-        public int? CorrectionUser { get; set; }
+        public Guid? CorrectionUser { get; set; }
         public string? CorrectionUserRole { get; set; }
         public DateTime? CorrectionDate { get; set; }
 

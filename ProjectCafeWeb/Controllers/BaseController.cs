@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using ProjectCafeDataAccess;
 using System.Security.Claims;
@@ -15,10 +16,10 @@ namespace ProjectCafeWeb.Controllers
 			_dbContext = dbContext;
 		}
 
-		protected int? GetCurrentUserId()
+		protected Guid? GetCurrentUserId()
         {
             var idStr = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            return int.TryParse(idStr, out var id) ? id : null;
+            return Guid.TryParse(idStr, out var id) ? id : null;
         }
 
 		protected string? GetCurrentUserRole()
@@ -26,7 +27,7 @@ namespace ProjectCafeWeb.Controllers
 			return User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
 		}
 
-		protected int? GetCurrentCafeId()
+		protected Guid? GetCurrentCafeId()
 		{
 			var userId = GetCurrentUserId();
 			var role = GetCurrentUserRole();
@@ -46,8 +47,13 @@ namespace ProjectCafeWeb.Controllers
             }
 
             // Eğer login yapılmamışsa (anonim müşteri ise) Session'dan al
-            var sessionCafeId = HttpContext.Session.GetInt32("CafeId");
-            return sessionCafeId;
+            var sessionCafeIdString = HttpContext.Session.GetString("CafeId");
+
+            if (Guid.TryParse(sessionCafeIdString, out Guid cafeGuid))
+            {
+                return cafeGuid;
+            }
+            return null;
         }
 
         public override void OnActionExecuting(ActionExecutingContext context)
@@ -83,6 +89,12 @@ namespace ProjectCafeWeb.Controllers
             }
 
             base.OnActionExecuting(context);
+        }
+
+        public bool IsDuplicateKeyException(DbUpdateException ex)
+        {
+            return ex.InnerException is SqlException sqlEx &&
+                   (sqlEx.Number == 2627 || sqlEx.Number == 2601); // PK veya unique key violation
         }
     }
 }

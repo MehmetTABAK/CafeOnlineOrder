@@ -8,17 +8,17 @@ namespace ProjectCafeEntities
 {
 	public class Payment
 	{
-		public int Id { get; set; }
-		public int TableId { get; set; }
-        public int? DailyReportId { get; set; }
+		public Guid Id { get; set; }
+		public Guid TableId { get; set; }
+        public Guid? DailyReportId { get; set; }
         public double TotalPrice { get; set; }
 		public byte Method { get; set; }
         public string? Comment { get; set; }
         public bool Active { get; set; }
-		public int RegistrationUser { get; set; }
+		public Guid RegistrationUser { get; set; }
 		public string RegistrationUserRole { get; set; }
 		public DateTime RegistrationDate { get; set; }
-		public int? CorrectionUser { get; set; }
+		public Guid? CorrectionUser { get; set; }
 		public string? CorrectionUserRole { get; set; }
 		public DateTime? CorrectionDate { get; set; }
 

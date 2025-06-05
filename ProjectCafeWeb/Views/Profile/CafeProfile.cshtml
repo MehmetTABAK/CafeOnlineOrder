@@ -621,7 +621,7 @@
         const imageSrc = document.getElementById('preview').src;
 
         const payload = {
-            id: mode === 'edit' ? parseInt(id) : 0,
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
             name: name,
             image: imageSrc,
             active: true
@@ -654,7 +654,7 @@
             fetch('/Profile/DeleteSection', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: parseInt(sectionId) })
+                body: JSON.stringify({ id: sectionId })
             })
             .then(response => response.json())
             .then(data => {
@@ -698,10 +698,10 @@
         const id = modal.getAttribute('data-table-id');
 
         const name = document.getElementById('table-name-input').value;
-        const sectionId = parseInt(document.getElementById('sectionId').value);
+        const sectionId = document.getElementById('sectionId').value;
 
         const payload = {
-            id: mode === 'edit' ? parseInt(id) : 0,
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
             sectionId: sectionId,
             name: name,
             notification: true,
@@ -731,7 +731,7 @@
             fetch('/Profile/DeleteTable', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: parseInt(tableId) })
+                body: JSON.stringify({ id: tableId })
             })
             .then(res => res.json())
             .then(data => {

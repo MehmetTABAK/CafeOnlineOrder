@@ -17,7 +17,7 @@ namespace ProjectCafeWeb.Controllers
 
         [AuthorizeWithPermission("ViewDailyAccount")]
         [Route("gunluk-islemler")]
-        public IActionResult DailyAccount(int? rapor)
+        public IActionResult DailyAccount(Guid? rapor)
         {
             var cafeId = GetCurrentCafeId();
             if (cafeId == null)
@@ -109,6 +109,7 @@ namespace ProjectCafeWeb.Controllers
 
             var report = new DailyReport
             {
+                Id = Guid.NewGuid(),
                 CafeId = cafeId.Value,
                 StartTime = DateTime.Now,
                 Active = true,
@@ -117,11 +118,24 @@ namespace ProjectCafeWeb.Controllers
                 RegistrationDate = DateTime.Now,
             };
 
-            _dbContext.DailyReport.Add(report);
-            _dbContext.SaveChanges();
+            try
+            {
+                _dbContext.DailyReport.Add(report);
+                _dbContext.SaveChanges();
 
-            TempData["SuccessMessage"] = "Gün başarıyla açıldı.";
-            return RedirectToAction("DailyAccount", new { rapor = report.Id });
+                TempData["SuccessMessage"] = "Gün başarıyla açıldı.";
+                return RedirectToAction("DailyAccount", new { rapor = report.Id });
+            }
+            catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+            {
+                // Guid çakışması durumunda tekrar dene
+                return StartDay(); // Recursive çağrı (dikkatli kullanın)
+            }
+            catch (Exception ex)
+            {
+                // Diğer hatalar
+                return Json(new { success = false, message = $"Gün açılamadı: {ex.Message}" });
+            }
         }
 
         [AuthorizeWithPermission("EndDay")]
@@ -159,10 +173,19 @@ namespace ProjectCafeWeb.Controllers
             }
 
             activeReport.EndTime = DateTime.Now;
-            _dbContext.SaveChanges();
 
-            TempData["SuccessMessage"] = "Gün başarıyla kapatıldı.";
-            return RedirectToAction("DailyAccount", new { rapor = activeReport.Id });
+            try
+            {
+                _dbContext.SaveChanges();
+
+                TempData["SuccessMessage"] = "Gün başarıyla kapatıldı.";
+                return RedirectToAction("DailyAccount", new { rapor = activeReport.Id });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Gün kapatılamadı: {ex.Message}" });
+            }
+            
         }
 
     }

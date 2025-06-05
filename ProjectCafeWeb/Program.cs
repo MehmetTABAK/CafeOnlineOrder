@@ -44,7 +44,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "cafeRoute",
-    pattern: "{cafeId:int}/{tableId:int}",
+    pattern: "{cafeId:guid}/{tableId:guid}",
     defaults: new { controller = "UserHome", action = "UserHome" }
 );
 

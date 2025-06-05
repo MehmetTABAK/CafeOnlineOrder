@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using ProjectCafeDataAccess;
 using ProjectCafeEntities;
 using ProjectCafeWeb.Attributes;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Text.Json;
 
@@ -39,7 +40,7 @@ namespace ProjectCafeWeb.Controllers
 
 		[AuthorizeWithPermission("ViewTableDetails")]
         [HttpGet]
-        public IActionResult GetTableDetails(int tableId)
+        public IActionResult GetTableDetails(Guid tableId)
         {
             var userId = GetCurrentUserId();
             var userRole = GetCurrentUserRole();
@@ -91,7 +92,7 @@ namespace ProjectCafeWeb.Controllers
 
         [AuthorizeWithPermission("Payment")]
 		[HttpPost]
-		public IActionResult PaySelectedOrdersSplit(List<int> orderIds, string cardAmount, string cashAmount)
+		public IActionResult PaySelectedOrdersSplit(List<Guid> orderIds, string cardAmount, string cashAmount)
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -122,6 +123,7 @@ namespace ProjectCafeWeb.Controllers
 			{
 				_dbContext.Payment.Add(new Payment
 				{
+                    Id = Guid.NewGuid(),
 					TableId = tableId,
 					Method = 1,
 					TotalPrice = card,
@@ -137,6 +139,7 @@ namespace ProjectCafeWeb.Controllers
 			{
 				_dbContext.Payment.Add(new Payment
 				{
+                    Id = Guid.NewGuid(),
 					TableId = tableId,
 					Method = 2,
 					TotalPrice = cash,
@@ -149,13 +152,28 @@ namespace ProjectCafeWeb.Controllers
 			}
 
 			orders.ForEach(o => o.Status = 4);
-			_dbContext.SaveChanges();
-            return Json(new { success = true });
+
+            try
+            {
+                _dbContext.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+            {
+                // Guid çakışması durumunda tekrar dene
+                return PaySelectedOrdersSplit(orderIds, cardAmount, cashAmount); // Recursive çağrı (dikkatli kullanın)
+            }
+            catch (Exception ex)
+            {
+                // Diğer hatalar
+                return Json(new { success = false, message = $"Ödeme sırasında bir sorun oluştu: {ex.Message}" });
+            }
+
         }
 
 		[AuthorizeWithPermission("Payment")]
 		[HttpPost]
-		public IActionResult CompletePayment(int tableId, byte method)
+		public IActionResult CompletePayment(Guid tableId, byte method)
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -177,6 +195,7 @@ namespace ProjectCafeWeb.Controllers
 
 			_dbContext.Payment.Add(new Payment
 			{
+                Id = Guid.NewGuid(),
 				TableId = tableId,
 				Method = method,
 				TotalPrice = total,
@@ -190,13 +209,26 @@ namespace ProjectCafeWeb.Controllers
 			foreach (var order in unpaidOrders)
 				order.Status = 4;
 
-			_dbContext.SaveChanges();
-            return Json(new { success = true });
+            try
+            {
+                _dbContext.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+            {
+                // Guid çakışması durumunda tekrar dene
+                return CompletePayment(tableId, method); // Recursive çağrı (dikkatli kullanın)
+            }
+            catch (Exception ex)
+            {
+                // Diğer hatalar
+                return Json(new { success = false, message = $"Ödeme sırasında bir sorun oluştu: {ex.Message}" });
+            }
         }
 
 		[AuthorizeWithPermission("MoveTableAndOrders")]
 		[HttpPost]
-		public IActionResult MoveSelectedOrders(int toId, List<int> orderIds)
+		public IActionResult MoveSelectedOrders(Guid toId, List<Guid> orderIds)
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -218,7 +250,7 @@ namespace ProjectCafeWeb.Controllers
 
 		[AuthorizeWithPermission("MoveTableAndOrders")]
 		[HttpPost]
-		public IActionResult MoveTable(int fromId, int toId)
+		public IActionResult MoveTable(Guid fromId, Guid toId)
 		{
 			var userId = GetCurrentUserId();
 			var userRole = GetCurrentUserRole();
@@ -248,7 +280,7 @@ namespace ProjectCafeWeb.Controllers
             if (userId == null || cafeId == null)
                 return Unauthorized();
 
-            var tableId = request.GetProperty("id").GetInt32();
+            var tableId = Guid.Parse(request.GetProperty("id").GetString());
             var notificationStatus = request.GetProperty("notification").GetBoolean();
 
             var table = _dbContext.Table
@@ -306,7 +338,7 @@ namespace ProjectCafeWeb.Controllers
 
         [AuthorizeWithPermission("ConfirmOrder")]
         [HttpPost]
-        public JsonResult ConfirmOrders(List<int> orderIds)
+        public JsonResult ConfirmOrders(List<Guid> orderIds)
         {
             var userId = GetCurrentUserId();
             var userRole = GetCurrentUserRole();
@@ -345,7 +377,7 @@ namespace ProjectCafeWeb.Controllers
 
         [AuthorizeWithPermission("DeliverTheOrder")]
         [HttpPost]
-        public JsonResult DeliverTheOrders(List<int> orderIds)
+        public JsonResult DeliverTheOrders(List<Guid> orderIds)
         {
             var userId = GetCurrentUserId();
             var userRole = GetCurrentUserRole();
@@ -375,7 +407,7 @@ namespace ProjectCafeWeb.Controllers
 
         [AuthorizeWithPermission("ReturnOrders")]
 		[HttpPost]
-		public JsonResult ReturnOrders(List<int> orderIds, int tableId, byte method, string comment)
+		public JsonResult ReturnOrders(List<Guid> orderIds, Guid tableId, byte method, string comment)
 		{
             var userId = GetCurrentUserId();
             var userRole = GetCurrentUserRole();
@@ -401,6 +433,7 @@ namespace ProjectCafeWeb.Controllers
 
             _dbContext.Payment.Add(new Payment
             {
+                Id = Guid.NewGuid(),
                 TableId = tableId,
                 Method = method,
                 TotalPrice = total,
@@ -411,14 +444,26 @@ namespace ProjectCafeWeb.Controllers
                 RegistrationDate = DateTime.Now
             });
 
-            _dbContext.SaveChanges();
-
-            return Json(new { success = true });
+            try
+            {
+                _dbContext.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+            {
+                // Guid çakışması durumunda tekrar dene
+                return ReturnOrders(orderIds, tableId, method, comment); // Recursive çağrı (dikkatli kullanın)
+            }
+            catch (Exception ex)
+            {
+                // Diğer hatalar
+                return Json(new { success = false, message = $"İade işlemi sırasında hata oluştu: {ex.Message}" });
+            }
         }
 
         [AuthorizeWithPermission("CancelOrders")]
         [HttpPost]
-        public JsonResult CancelOrders(List<int> orderIds)
+        public JsonResult CancelOrders(List<Guid> orderIds)
         {
             var userId = GetCurrentUserId();
             var userRole = GetCurrentUserRole();
@@ -459,7 +504,7 @@ namespace ProjectCafeWeb.Controllers
 
         [AuthorizeWithPermission("BonusOrders")]
         [HttpPost]
-        public JsonResult BonusOrders(List<int> orderIds, int tableId, byte method)
+        public JsonResult BonusOrders(List<Guid> orderIds, Guid tableId, byte method)
         {
             var userId = GetCurrentUserId();
             var userRole = GetCurrentUserRole();
@@ -485,6 +530,7 @@ namespace ProjectCafeWeb.Controllers
 
             _dbContext.Payment.Add(new Payment
             {
+                Id = Guid.NewGuid(),
                 TableId = tableId,
                 Method = method,
                 TotalPrice = total,
@@ -495,9 +541,21 @@ namespace ProjectCafeWeb.Controllers
                 RegistrationDate = DateTime.Now
             });
 
-            _dbContext.SaveChanges();
-
-            return Json(new { success = true });
+            try
+            {
+                _dbContext.SaveChanges();
+                return Json(new { success = true });
+            }
+            catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+            {
+                // Guid çakışması durumunda tekrar dene
+                return BonusOrders(orderIds, tableId, method); // Recursive çağrı (dikkatli kullanın)
+            }
+            catch (Exception ex)
+            {
+                // Diğer hatalar
+                return Json(new { success = false, message = $"İkram işlemi sırasında bir hata oluştu: {ex.Message}" });
+            }
         }
 
         [HttpGet]
@@ -527,7 +585,7 @@ namespace ProjectCafeWeb.Controllers
 		}
 
         [HttpGet]
-		public JsonResult GetSubMenuCategories(int categoryId)
+		public JsonResult GetSubMenuCategories(Guid categoryId)
 		{
             var cafeId = GetCurrentCafeId();
 
@@ -540,7 +598,7 @@ namespace ProjectCafeWeb.Controllers
 		}
 
 		[HttpGet]
-		public JsonResult GetProducts(int subCategoryId)
+		public JsonResult GetProducts(Guid subCategoryId)
 		{
             var cafeId = GetCurrentCafeId();
 
@@ -565,7 +623,7 @@ namespace ProjectCafeWeb.Controllers
 
         [AuthorizeWithPermission("AddOrders")]
         [HttpPost]
-        public JsonResult AddOrders(List<int> productIds, int tableId)
+        public JsonResult AddOrders(List<Guid> productIds, Guid tableId)
         {
             var userId = GetCurrentUserId();
             var userRole = GetCurrentUserRole();
@@ -584,6 +642,7 @@ namespace ProjectCafeWeb.Controllers
             {
                 var order = new Order
                 {
+                    Id = Guid.NewGuid(),
                     ProductId = productId,
                     TableId = tableId,
                     Status = 1,
@@ -592,9 +651,22 @@ namespace ProjectCafeWeb.Controllers
                     RegistrationUserRole = userRole,
                     RegistrationDate = DateTime.Now
                 };
-                _dbContext.Order.Add(order);
+                try
+                {
+                    _dbContext.Order.Add(order);
+                }
+                catch (DbUpdateException ex) when (IsDuplicateKeyException(ex))
+                {
+                    // Guid çakışması durumunda tekrar dene
+                    return AddOrders(productIds, tableId); // Recursive çağrı (dikkatli kullanın)
+                }
+                catch (Exception ex)
+                {
+                    // Diğer hatalar
+                    return Json(new { success = false, message = $"Ürün eklenemedi: {ex.Message}" });
+                }
             }
-
+            
             _dbContext.SaveChanges();
             return Json(new { success = true });
         }

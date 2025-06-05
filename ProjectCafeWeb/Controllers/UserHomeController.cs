@@ -7,10 +7,10 @@ namespace ProjectCafeWeb.Controllers
     {
         public UserHomeController(ProjectCafeDbContext dbContext) : base(dbContext) { }
 
-        public IActionResult UserHome(int cafeId, int tableId)
+        public IActionResult UserHome(Guid cafeId, Guid tableId)
         {
-            HttpContext.Session.SetInt32("CafeId", cafeId);
-            HttpContext.Session.SetInt32("TableId", tableId);
+            HttpContext.Session.SetString("CafeId", cafeId.ToString());
+            HttpContext.Session.SetString("TableId", tableId.ToString());
             return View();
         }
     }

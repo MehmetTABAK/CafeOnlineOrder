@@ -189,7 +189,7 @@
         const imageSrc = document.getElementById('preview').src;
 
         const payload = {
-            id: mode === 'edit' ? parseInt(id) : 0,
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
             categoryName: name,
             categoryImage: imageSrc,
             active: true,
@@ -225,7 +225,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: parseInt(categoryId) })
+                body: JSON.stringify({ id: categoryId })
             })
                 .then(response => response.json())
                 .then(data => {

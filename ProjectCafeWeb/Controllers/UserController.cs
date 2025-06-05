@@ -18,7 +18,7 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [Route("menu-kategori/{cafeId}/{tableId}")]
-        public IActionResult UserMenuCategory(int cafeId, int tableId)
+        public IActionResult UserMenuCategory(Guid cafeId, Guid tableId)
         {
             var categories = _dbContext.MenuCategory
                 .Where(x => x.CafeId == cafeId && x.Active)
@@ -36,7 +36,7 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [Route("alt-menu-kategori/{cafeId}/{tableId}/{categoryId}")]
-        public IActionResult UserSubMenuCategory(int categoryId, int cafeId, int tableId)
+        public IActionResult UserSubMenuCategory(Guid categoryId, Guid cafeId, Guid tableId)
         {
             var subCategories = _dbContext.SubMenuCategory
                 .Where(x => x.MenuCategoryId == categoryId && x.Active && x.MenuCategory.CafeId == cafeId)
@@ -56,7 +56,7 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [Route("urunler/{cafeId}/{tableId}/{categoryId}/{subCategoryId}")]
-        public IActionResult UserProduct(int subCategoryId, int cafeId, int tableId, int categoryId)
+        public IActionResult UserProduct(Guid subCategoryId, Guid cafeId, Guid tableId, Guid categoryId)
         {
             var products = _dbContext.Product
                 .Where(x => x.SubMenuCategoryId == subCategoryId && x.Active && x.Stock && x.MenuCategory.CafeId == cafeId)
@@ -80,7 +80,7 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddToCart(int productId)
+        public IActionResult AddToCart(Guid productId)
         {
             var product = _dbContext.Product.FirstOrDefault(x => x.Id == productId && x.Active);
             if (product == null) return NotFound();
@@ -118,7 +118,7 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult UpdateCartQuantity(int productId, int quantity)
+        public IActionResult UpdateCartQuantity(Guid productId, int quantity)
         {
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>("Cart") ?? new List<CartItem>();
 
@@ -133,7 +133,7 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [HttpPost]
-        public IActionResult RemoveFromCart(int productId)
+        public IActionResult RemoveFromCart(Guid productId)
         {
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>("Cart") ?? new List<CartItem>();
             var itemToRemove = cart.FirstOrDefault(x => x.ProductId == productId);
@@ -162,7 +162,7 @@ namespace ProjectCafeWeb.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> ConfirmOrder(int cafeId, int tableId)
+        public async Task<IActionResult> ConfirmOrder(Guid cafeId, Guid tableId)
         {
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>("Cart");
 

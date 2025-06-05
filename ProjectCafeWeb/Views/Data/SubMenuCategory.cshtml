@@ -222,10 +222,10 @@
         const category = document.getElementById('menuCategory').value;
         const imageSrc = document.getElementById('preview').src;
 
-        const menuCategoryId = parseInt(document.getElementById('menuCategoryId').value);
+        const menuCategoryId = document.getElementById('menuCategoryId').value;
 
         const payload = {
-            id: mode === 'edit' ? parseInt(id) : 0,
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
             subCategoryName: name,
             subCategoryImage: imageSrc,
             menuCategoryId,
@@ -262,7 +262,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ id: parseInt(subCategoryId) })
+                body: JSON.stringify({ id: subCategoryId })
             })
                 .then(response => response.json())
                 .then(data => {
