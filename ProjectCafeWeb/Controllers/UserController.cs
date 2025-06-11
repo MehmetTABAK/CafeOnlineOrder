@@ -152,8 +152,8 @@ namespace ProjectCafeWeb.Controllers
         {
             var cart = HttpContext.Session.GetObjectFromJson<List<CartItem>>("Cart") ?? new List<CartItem>();
 
-            var tableId = HttpContext.Session.GetInt32("TableId");
-            var cafeId = HttpContext.Session.GetInt32("CafeId");
+            var tableId = HttpContext.Session.GetString("TableId");
+            var cafeId = HttpContext.Session.GetString("CafeId");
 
             ViewBag.TableId = tableId;
             ViewBag.CafeId = cafeId;

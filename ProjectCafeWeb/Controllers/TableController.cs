@@ -418,7 +418,7 @@ namespace ProjectCafeWeb.Controllers
 
             var orders = _dbContext.Order
                 .Include(o => o.Product)
-                .Where(o => orderIds.Contains(o.Id))
+                .Where(o => orderIds.Contains(o.Id) && o.Active && o.Product != null && o.Product.MenuCategory.CafeId == cafeId)
                 .ToList();
 
             foreach (var order in orders)
@@ -515,7 +515,7 @@ namespace ProjectCafeWeb.Controllers
 
             var orders = _dbContext.Order
                 .Include(o => o.Product)
-                .Where(o => orderIds.Contains(o.Id))
+                .Where(o => orderIds.Contains(o.Id) && o.Active && o.Product != null && o.Product.MenuCategory.CafeId == cafeId)
                 .ToList();
 
             foreach (var order in orders)

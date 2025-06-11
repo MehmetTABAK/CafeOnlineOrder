@@ -5,8 +5,11 @@
 
 @inject IHttpContextAccessor HttpContextAccessor
 @{
-    var cafeId = HttpContextAccessor.HttpContext.Session.GetInt32("CafeId") ?? 0;
-    var tableId = HttpContextAccessor.HttpContext.Session.GetInt32("TableId") ?? 0;
+    var cafeIdStr = HttpContextAccessor.HttpContext.Session.GetString("CafeId");
+    var tableIdStr = HttpContextAccessor.HttpContext.Session.GetString("TableId");
+
+    Guid cafeId = Guid.TryParse(cafeIdStr, out var cId) ? cId : Guid.Empty;
+    Guid tableId = Guid.TryParse(tableIdStr, out var tId) ? tId : Guid.Empty;
 }
 
 <div class="text-center py-5">

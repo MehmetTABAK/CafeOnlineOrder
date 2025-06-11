@@ -176,7 +176,7 @@
         });
     });
 
-    // Üst menü kaydetme ve güncelleme işlemleri
+    // Profilim güncelleme işlemi
     document.querySelector('#adminModal .btn-primary').addEventListener('click', () => {
         const modal = document.getElementById('adminModal');
         const mode = modal.getAttribute('data-mode');
@@ -189,7 +189,7 @@
         const imageSrc = document.getElementById('preview').src;
 
         const payload = {
-            id: mode === 'edit' ? parseInt(id) : 0,
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
             firstname: firstname,
             lastname: lastname,
             imageSrc: imageSrc,
@@ -217,7 +217,7 @@
         .catch(() => alert('Sunucu hatası oluştu.'));
     });
 
-    // Üst menü silme işlemi
+    // Profilim silme işlemi
     document.querySelectorAll('.delete-admin-btn').forEach(button => {
         button.addEventListener('click', function () {
             const adminId = this.getAttribute('data-id');

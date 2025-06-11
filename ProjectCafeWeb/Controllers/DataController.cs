@@ -266,7 +266,7 @@ namespace ProjectCafeWeb.Controllers
 
 			var existing = await _dbContext.SubMenuCategory
 				.Include(sm => sm.MenuCategory).ThenInclude(mc => mc.Cafe)
-				.FirstOrDefaultAsync(sm => sm.Id == subMenuCategory.Id && sm.MenuCategory.Cafe.Id == userId);
+				.FirstOrDefaultAsync(sm => sm.Id == subMenuCategory.Id && sm.MenuCategory.Cafe.Id == cafeId);
 
 			if (existing == null)
 				return Json(new { success = false, message = "Alt menü bulunamadı veya yetkiniz yok." });
@@ -310,7 +310,7 @@ namespace ProjectCafeWeb.Controllers
             var subMenuCategory = _dbContext.SubMenuCategory
 				.Include(sc => sc.MenuCategory).ThenInclude(mc => mc.Cafe)
 				.Include(sc => sc.Products)
-				.FirstOrDefault(sc => sc.Id == subMenuCategoryId && sc.MenuCategory.Cafe.Id == userId);
+				.FirstOrDefault(sc => sc.Id == subMenuCategoryId && sc.MenuCategory.Cafe.Id == cafeId);
 
 			if (subMenuCategory == null)
 				return Json(new { success = false, message = "Alt menü bulunamadı veya yetkiniz yok." });

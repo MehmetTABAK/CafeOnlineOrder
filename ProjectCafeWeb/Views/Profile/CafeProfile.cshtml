@@ -565,7 +565,7 @@
         const cafeLocations = document.querySelector('input[placeholder="Kafe konumu yazın..."]').value;
 
         const payload = {
-            id: mode === 'edit' ? parseInt(id) : 0,
+            id: mode === 'edit' ? id : '00000000-0000-0000-0000-000000000000',
             name: name,
             image: imageSrc,
             location: cafeLocations,

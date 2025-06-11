@@ -471,12 +471,13 @@
 
         $(document).on('change', '.order-checkbox', function () {
             selectedOrderIds = $('.order-checkbox:checked').map(function () {
-                return parseInt($(this).data('id'));
+                return $(this).data('id');
             }).get();
 
-            let total = $('.order-checkbox:checked').toArray().reduce((sum, el) => sum + parseFloat($(el).data('price')), 0);
-            $('#selectedAmount').text(total);
+            let total = $('.order-checkbox:checked').toArray().reduce((sum, el) => sum + parseFloat($(el).data('price') || 0), 0);
+            $('#selectedAmount').text(total.toFixed(2));
             $('#partialPayBtn').prop('disabled', selectedOrderIds.length === 0);
+            $('#moveSelectedOrdersBtn').prop('disabled', selectedOrderIds.length === 0);
         });
 
         let selectedAmount = 0;
@@ -595,18 +596,6 @@
             });
         });
 
-        $(document).on('change', '.order-checkbox', function () {
-            selectedOrderIds = $('.order-checkbox:checked').map(function () {
-                return parseInt($(this).data('id'));
-            }).get();
-
-            let total = $('.order-checkbox:checked').toArray().reduce((sum, el) => sum + parseFloat($(el).data('price')), 0);
-            $('#selectedAmount').text(total.toFixed(2));
-            const hasSelection = selectedOrderIds.length > 0;
-            $('#partialPayBtn').prop('disabled', !hasSelection);
-            $('#moveSelectedOrdersBtn').prop('disabled', !hasSelection);
-        });
-
         document.querySelectorAll('.close-table-btn').forEach(button => {
             button.addEventListener('click', function () {
                 const tableId = this.getAttribute('data-id');
@@ -617,7 +606,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ id: parseInt(tableId) })
+                    body: JSON.stringify({ id: tableId })
                 })
                     .then(response => response.json())
                     .then(data => {
@@ -642,10 +631,6 @@
         });
 
         $('#confirmOrderBtn').click(function () {
-            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
-                return parseInt($(this).data('id'));
-            }).get();
-
             if (selectedOrderIds.length === 0) {
                 alert("Lütfen onaylamak istediğiniz siparişleri seçin.");
                 return;
@@ -666,10 +651,6 @@
         });
 
         $('#deliverTheOrderBtn').click(function () {
-            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
-                return parseInt($(this).data('id'));
-            }).get();
-
             if (selectedOrderIds.length === 0) {
                 alert("Lütfen teslim etmek istediğiniz siparişleri seçin.");
                 return;
@@ -690,10 +671,6 @@
         });
 
         $('#cancelSelectedOrdersBtn').click(function () {
-            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
-                return parseInt($(this).data('id'));
-            }).get();
-
             if (selectedOrderIds.length === 0) {
                 alert("Lütfen iptal etmek istediğiniz siparişleri seçin.");
                 return;
@@ -713,14 +690,8 @@
             });
         });
 
-        let selectedReturnOrderIds = [];
-
         $('#returnSelectedOrdersBtn').click(function () {
-            selectedReturnOrderIds = $('.order-checkbox:checked').map(function () {
-                return parseInt($(this).data('id'));
-            }).get();
-
-            if (selectedReturnOrderIds.length === 0) {
+            if (selectedOrderIds.length === 0) {
                 alert("Lütfen iade etmek istediğiniz siparişleri seçin.");
                 return;
             }
@@ -750,7 +721,7 @@
                 tableId: selectedTableId,
                 method: 3,
                 comment: reason,
-                orderIds: selectedReturnOrderIds
+                orderIds: selectedOrderIds
             }, function (res) {
                 if (res.success) {
                     alert("Seçilen siparişler iade edildi.");
@@ -765,10 +736,6 @@
         });
 
         $('#bonusSelectedOrdersBtn').click(function () {
-            var selectedOrderIds = $('.order-checkbox:checked').map(function () {
-                return parseInt($(this).data('id'));
-            }).get();
-
             if (selectedOrderIds.length === 0) {
                 alert("Lütfen ikram etmek istediğiniz siparişleri seçin.");
                 return;
@@ -909,7 +876,7 @@
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ id: parseInt(tableId), notification: isChecked })
+                    body: JSON.stringify({ id: tableId, notification: isChecked })
                 })
                     .then(response => response.json())
                     .then(data => {
