@@ -19,164 +19,197 @@
     var allowedPages = !string.IsNullOrEmpty(permissionsJson) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(permissionsJson) : new List<string>();
 }
 
-@foreach (var category in allCategories)
-{
-    <div class="menu-divider">
-        <span>@category.CategoryName</span>
+<div class="hero-section-submenu">
+    <div class="container py-5">
+        <h1 class="display-4 text-white">Alt Menü Yönetimi</h1>
+        <p class="lead text-white-50">Menünüzdeki alt menüleri kolayca yönetin</p>
     </div>
+</div>
 
-    var subCategoriesInThisCategory = allSubCategories.Where(s => s.MenuCategoryId == category.Id).ToList();
+<div class="container">
+    @foreach (var category in allCategories)
+    {
+        <div class="menu-divider">
+            <span>@category.CategoryName</span>
+        </div>
 
-    <div class="row pt-4">
-        @if (subCategoriesInThisCategory.Any())
-        {
-            foreach (var subCategory in subCategoriesInThisCategory)
+        var subCategoriesInThisCategory = allSubCategories.Where(s => s.MenuCategoryId == category.Id).ToList();
+
+        <div class="row pt-4">
+            @if (subCategoriesInThisCategory.Any())
             {
-                <div class="col-md-4 mb-4">
-                    <div class="blog-card">
-                        <a href="#">
-                            <img src="@subCategory.SubCategoryImage" alt="@subCategory.SubCategoryName" class="img-fluid">
-                        </a>
-                        <div class="blog-content">
-                            <a href="#">
-                                <h3 class="mb-4 mt-2">
-                                    @subCategory.SubCategoryName
-                                </h3>
-                            </a>
-                            <div class="d-flex justify-content-between gap-2 mt-3">
-                                @if (role == "Admin" || allowedPages.Contains("UpdateSubMenuCategory"))
-                                {
-                                    <a href="#">
-                                        <button class="readmore-btn edit-subcategory-btn"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#subCategoryModal"
-                                                data-id="@subCategory.Id"
-                                                data-name="@subCategory.SubCategoryName"
-                                                data-image="@subCategory.SubCategoryImage"
-                                                data-category="@category.CategoryName"
-                                                data-category-id="@subCategory.MenuCategoryId">
-                                            <span class="book-wrapper">
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     fill="rgb(86, 69, 117)"
-                                                     viewBox="0 0 126 75"
-                                                     class="book">
-                                                    <rect stroke-width="3"
-                                                          stroke="#fff"
-                                                          rx="7.5"
-                                                          height="70"
-                                                          width="121"
-                                                          y="2.5"
-                                                          x="2.5"></rect>
-                                                    <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
-                                                    <path stroke-linecap="round"
-                                                          stroke-width="4"
-                                                          stroke="#fff"
-                                                          d="M25 20H50"></path>
-                                                    <path stroke-linecap="round"
-                                                          stroke-width="4"
-                                                          stroke="#fff"
-                                                          d="M101 20H76"></path>
-                                                    <path stroke-linecap="round"
-                                                          stroke-width="4"
-                                                          stroke="#fff"
-                                                          d="M16 30L50 30"></path>
-                                                    <path stroke-linecap="round"
-                                                          stroke-width="4"
-                                                          stroke="#fff"
-                                                          d="M110 30L76 30"></path>
-                                                </svg>
+                foreach (var subCategory in subCategoriesInThisCategory)
+                {
+                     <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="menu-card h-100 border-0 shadow-lg">
+                            <div class="card-img-container">
+                                <img src="@subCategory.SubCategoryImage" class="card-img-top" alt="@subCategory.SubCategoryName">
+                                <div class="card-img-overlay d-flex align-items-end">
+                                   <h3 class="card-title text-white text-shadow">@subCategory.SubCategoryName</h3>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between gap-2">
+                                    @if (role == "Admin" || allowedPages.Contains("UpdateSubMenuCategory"))
+                                    {
+                                        <a href="#">
+                                            <button class="readmore-btn edit-subcategory-btn"
+                                                    data-bs-toggle="modal"
+                                                    data-bs-target="#subCategoryModal"
+                                                    data-id="@subCategory.Id"
+                                                    data-name="@subCategory.SubCategoryName"
+                                                    data-image="@subCategory.SubCategoryImage"
+                                                    data-category="@category.CategoryName"
+                                                    data-category-id="@subCategory.MenuCategoryId">
+                                                <span class="book-wrapper">
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         fill="rgb(86, 69, 117)"
+                                                         viewBox="0 0 126 75"
+                                                         class="book">
+                                                        <rect stroke-width="3"
+                                                              stroke="#fff"
+                                                              rx="7.5"
+                                                              height="70"
+                                                              width="121"
+                                                              y="2.5"
+                                                              x="2.5"></rect>
+                                                        <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
+                                                        <path stroke-linecap="round"
+                                                              stroke-width="4"
+                                                              stroke="#fff"
+                                                              d="M25 20H50"></path>
+                                                        <path stroke-linecap="round"
+                                                              stroke-width="4"
+                                                              stroke="#fff"
+                                                              d="M101 20H76"></path>
+                                                        <path stroke-linecap="round"
+                                                              stroke-width="4"
+                                                              stroke="#fff"
+                                                              d="M16 30L50 30"></path>
+                                                        <path stroke-linecap="round"
+                                                              stroke-width="4"
+                                                              stroke="#fff"
+                                                              d="M110 30L76 30"></path>
+                                                    </svg>
 
-                                                <svg xmlns="http://www.w3.org/2000/svg"
-                                                     fill="none"
-                                                     viewBox="0 0 65 75"
-                                                     class="book-page">
-                                                    <path stroke-linecap="round"
-                                                          stroke-width="4"
-                                                          stroke="#fff"
-                                                          d="M40 20H15"></path>
-                                                    <path stroke-linecap="round"
-                                                          stroke-width="4"
-                                                          stroke="#fff"
-                                                          d="M49 30L15 30"></path>
-                                                    <path stroke-width="3"
-                                                          stroke="#fff"
-                                                          d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
-                                                </svg>
-                                            </span>
-                                            <span class="text"> Alt Menüyü Düzenle </span>
-                                        </button>
-                                    </a>
-                                }
-                                @if (role == "Admin" || allowedPages.Contains("DeleteSubMenuCategory"))
-                                {
-                                    <a href="#">
-                                        <button class="noselect delete-subcategory-btn" data-id="@subCategory.Id">
-                                            <span class="text">Alt Menüyü Kaldır</span>
-                                            <span class="icon">
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                                    <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
-                                                </svg>
-                                            </span>
-                                        </button>
-                                    </a>
-                                }
+                                                    <svg xmlns="http://www.w3.org/2000/svg"
+                                                         fill="none"
+                                                         viewBox="0 0 65 75"
+                                                         class="book-page">
+                                                        <path stroke-linecap="round"
+                                                              stroke-width="4"
+                                                              stroke="#fff"
+                                                              d="M40 20H15"></path>
+                                                        <path stroke-linecap="round"
+                                                              stroke-width="4"
+                                                              stroke="#fff"
+                                                              d="M49 30L15 30"></path>
+                                                        <path stroke-width="3"
+                                                              stroke="#fff"
+                                                              d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
+                                                    </svg>
+                                                </span>
+                                                <span class="text"> Alt Menüyü Düzenle </span>
+                                            </button>
+                                        </a>
+                                    }
+                                    @if (role == "Admin" || allowedPages.Contains("DeleteSubMenuCategory"))
+                                    {
+                                        <a href="#">
+                                            <button class="noselect delete-subcategory-btn" data-id="@subCategory.Id">
+                                                <span class="text">Alt Menüyü Kaldır</span>
+                                                <span class="icon">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                                        <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
+                                                    </svg>
+                                                </span>
+                                            </button>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="no-subcategory">
+                        <i class="fas fa-folder-open"></i>
+                        <p>Bu kategoriye ait alt menü bulunmamaktadır</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (role == "Admin" || allowedPages.Contains("AddSubMenuCategory"))
+        {
+            <div class="d-flex justify-content-end mb-4">
+                <button class="addimg"
+                        data-category="@category.CategoryName"
+                        data-category-id="@category.Id"
+                        data-bs-toggle="modal"
+                        data-bs-target="#subCategoryModal">
+                    <span class="addimg__text">Alt Menü Ekle</span>
+                    <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+                </button>
+            </div>
+        }
+    }
+
+</div>
+
+@if (role == "Admin" || allowedPages.Contains("AddSubMenuCategory") || allowedPages.Contains("UpdateSubMenuCategory"))
+{
+    <div class="modal fade" id="subCategoryModal" tabindex="-1" aria-labelledby="subCategoryModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-gradient-primary text-white">
+                    <h5 class="modal-title" id="subCategoryModalLabel">Alt Menü Yönetimi</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="image-upload-container mb-4">
+                                <label for="image-upload" class="upload-area">
+                                    <div class="upload-content">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                        <h5>Resim Yükle</h5>
+                                        <p class="text-muted mb-1">Alt menüde görülecek resmi seçmek için tıklayın!</p>
+                                        <small class="text-muted">PNG, JPG (Max. 2MB)</small>
+                                    </div>
+                                    <img id="preview" class="preview-image" alt="Önizleme">
+                                    <input type="file" id="image-upload" class="d-none" accept="image/*">
+                                </label>
+                                <div class="image-requirements text-muted mt-2">
+                                    <small>Önerilen boyut: 800x400px</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label for="categoryName" class="form-label fw-bold">Üst Menü Adı*</label>
+                                <input type="text" id="menuCategory" class="form-control" readonly>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <label for="subCategoryName" class="form-label fw-bold">Alt Menü Adı*</label>
+                                <input type="text" class="form-control form-control-lg" id="subCategoryName"
+                                       placeholder="Örnek: Burgerler" required>
                             </div>
                         </div>
                     </div>
                 </div>
-            }
-        }
-        else
-        {
-            <div class="col-12 mb-4 text-muted">Bu kategoriye ait alt menü bulunmamaktadır.</div>
-        }
-    </div>
-
-    @if (role == "Admin" || allowedPages.Contains("AddSubMenuCategory"))
-    {
-        <div class="d-flex justify-content-end mb-4">
-            <button class="addimg"
-                    data-category="@category.CategoryName"
-                    data-category-id="@category.Id"
-                    data-bs-toggle="modal"
-                    data-bs-target="#subCategoryModal">
-                <span class="addimg__text">Alt Menü Ekle</span>
-                <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
-            </button>
-        </div>
-    }
-}
-
-@if (role == "Admin" || allowedPages.Contains("AddSubMenuCategory") || allowedPages.Contains("UpdateSubMenuCategory"))
-{
-    <!-- Modal Başlangıcı -->
-    <div class="modal fade" id="subCategoryModal" tabindex="-1" aria-labelledby="subCategoryModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content rounded-4 shadow-lg">
-                <div class="modal-body">
-                    <h3 class="text-muted">Alt Menü Resmi:</h3>
-                    <label for="image-upload" class="upload-area">
-                        <span class="upload-icon">
-                            <svg xml:space="preserve" viewBox="0 0 184.69 184.69" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" id="Capa_1" version="1.1" width="60px" height="60px">
-                            <g>
-                            <path d="M149.968,50.186c-8.017-14.308-23.796-22.515-40.717-19.813C102.609,16.43,88.713,7.576,73.087,7.576c-22.117,0-40.112,17.994-40.112,40.115c0,0.913,0.036,1.854,0.118,2.834C14.004,54.875,0,72.11,0,91.959c0,23.456,19.082,42.535,42.538,42.535h33.623v-7.025H42.538c-19.583,0-35.509-15.929-35.509-35.509c0-17.526,13.084-32.621,30.442-35.105c0.931-0.132,1.768-0.633,2.326-1.392c0.555-0.755,0.795-1.704,0.644-2.63c-0.297-1.904-0.447-3.582-0.447-5.139c0-18.249,14.852-33.094,33.094-33.094c13.703,0,25.789,8.26,30.803,21.04c0.63,1.621,2.351,2.534,4.058,2.14c15.425-3.568,29.919,3.883,36.604,17.168c0.508,1.027,1.503,1.736,2.641,1.897c17.368,2.473,30.481,17.569,30.481,35.112c0,19.58-15.937,35.509-35.52,35.509H97.391v7.025h44.761c23.459,0,42.538-19.079,42.538-42.535C184.69,71.545,169.884,53.901,149.968,50.186z" style="fill:#010002;"></path>
-                                </g>
-                            </svg>
-                        </span>
-                        <p class="imgtext">Alt menüde görülecek resmi seçiniz!</p>
-                        <img id="preview" alt="Alt Menü Resmi">
-                        <input class="input" type="file" id="image-upload" accept="image/*">
-                    </label>
-
-                    <h3 class="text-muted">Üst Menü:</h3>
-                    <input type="text" id="menuCategory" class="form-control" readonly>
-
-                    <h3 class="text-muted">Alt Menü İsmi:</h3>
-                    <input type="text" placeholder="Buraya alt menü ismini yazın..." class="form-control" required>
-                </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Kapat</button>
-                    <button type="button" class="btn btn-primary rounded-pill">Kaydet</button>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Vazgeç
+                    </button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="saveSubCategoryBtn">
+                        <i class="fas fa-save me-2"></i>Kaydet
+                    </button>
                 </div>
             </div>
         </div>
@@ -200,12 +233,12 @@
             modal.setAttribute('data-mode', isEdit ? 'edit' : 'create');
 
             if (isEdit) {
-                document.querySelector('input[placeholder="Buraya alt menü ismini yazın..."]').value = this.getAttribute('data-name');
+                document.querySelector('input[placeholder="Örnek: Burgerler"]').value = this.getAttribute('data-name');
                 const image = this.getAttribute('data-image');
                 if (image) document.getElementById('preview').src = image;
                 modal.setAttribute('data-id', this.getAttribute('data-id'));
             } else {
-                document.querySelector('input[placeholder="Buraya alt menü ismini yazın..."]').value = "";
+                document.querySelector('input[placeholder="Örnek: Burgerler"]').value = "";
                 document.getElementById('preview').src = "";
                 modal.removeAttribute('data-id');
             }
@@ -218,7 +251,7 @@
         const mode = modal.getAttribute('data-mode');
         const id = modal.getAttribute('data-id');
 
-        const name = document.querySelector('input[placeholder="Buraya alt menü ismini yazın..."]').value;
+        const name = document.querySelector('input[placeholder="Örnek: Burgerler"]').value;
         const category = document.getElementById('menuCategory').value;
         const imageSrc = document.getElementById('preview').src;
 

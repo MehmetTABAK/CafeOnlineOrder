@@ -33,7 +33,8 @@ namespace ProjectCafeWeb.Controllers
 				.Include(t => t.Section)
 				.Include(t => t.Orders)
 				.Where(t => t.Active && t.Section.Cafe.Id == cafeId)
-				.ToList();
+                .OrderBy(t => t.Name)
+                .ToList();
 
 			return View(tables);
 		}
@@ -61,11 +62,13 @@ namespace ProjectCafeWeb.Controllers
 
             // Sadece aynı cafeye ait ve aktif olan masaları getir
             var allTables = _dbContext.Table
+                .Include(t => t.Section)
                 .Where(t => t.Active && t.Section.CafeId == cafeId && t.Id != tableId)
                 .Select(t => new
                 {
                     t.Id,
-                    t.Name
+                    t.Name,
+                    SectionName = t.Section != null ? t.Section.Name : null
                 })
                 .ToList();
 

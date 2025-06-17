@@ -16,238 +16,356 @@
     var allowedPages = !string.IsNullOrEmpty(permissionsJson) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(permissionsJson) : new List<string>();
 }
 
-@foreach (var sectionGroup in Model.GroupBy(p => p.Section?.Name))
-{
-    <div class="menu-divider">
-        <span>@sectionGroup.Key</span>
-    </div>
-
-    <div class="row pt-4">
-        @foreach (var table in sectionGroup)
+<div class="container-fluid p-4">
+    <!-- Masa Grupları -->
+    <div class="row g-4" id="tablesContainer">
+        @foreach (var sectionGroup in Model.GroupBy(p => p.Section?.Name))
         {
-            <div class="col-md-4 mb-4">
-                @{
-                    string bgClass = "bg-white";
+            <div class="col-12 section-group" data-section="@sectionGroup.Key">
+                <div class="menu-divider">
+                    <span>@sectionGroup.Key</span>
+                </div>
 
-                    var activeOrders = table.Orders.Where(o => o.Active).ToList();
-
-                    if (activeOrders.Count != 0)
+                <div class="row g-4">
+                    @foreach (var table in sectionGroup)
                     {
-                        if (activeOrders.All(o => o.Status == 4 || o.Status == 6 || o.Status == 7 || o.Status == 8))
-                        {
-                            bgClass = "bg-brown";
-                        }
-                        else if (activeOrders.All(o => o.Status == 5))
-                        {
-                            bgClass = "bg-white";
-                        }
-                        else if (activeOrders.Any(o => o.Status != 4 && o.Status != 5))
-                        {
-                            bgClass = "bg-yellow";
-                        }
-                    }
-                }
-                <div class="blog-card @bgClass">
-                    <div class="blog-content">
-                        <a href="#">
-                            <h3 class="mb-4 mt-2">
-                                @table.Name
-                            </h3>
-                        </a>
-                        <div class="d-flex justify-content-between gap-2 mt-3">
-                            @if (role == "Admin" || allowedPages.Contains("ViewTableDetails"))
-                            {
-                                <a href="#">
-                                    <button class="readmore-btn edit-table-btn"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#tableModal"
-                                            data-id="@table.Id">
-                                        <span class="book-wrapper">
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="rgb(86, 69, 117)"
-                                                 viewBox="0 0 126 75"
-                                                 class="book">
-                                                <rect stroke-width="3"
-                                                      stroke="#fff"
-                                                      rx="7.5"
-                                                      height="70"
-                                                      width="121"
-                                                      y="2.5"
-                                                      x="2.5"></rect>
-                                                <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M25 20H50"></path>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M101 20H76"></path>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M16 30L50 30"></path>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M110 30L76 30"></path>
-                                            </svg>
+                        var activeOrders = table.Orders.Where(o => o.Active).ToList();
+                        var statusClass = "table-available";
+                        var statusText = "Müsait";
+                        var statusIcon = "fa-circle-check";
+                        string bgClass = "bg-white";
 
-                                            <svg xmlns="http://www.w3.org/2000/svg"
-                                                 fill="none"
-                                                 viewBox="0 0 65 75"
-                                                 class="book-page">
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M40 20H15"></path>
-                                                <path stroke-linecap="round"
-                                                      stroke-width="4"
-                                                      stroke="#fff"
-                                                      d="M49 30L15 30"></path>
-                                                <path stroke-width="3"
-                                                      stroke="#fff"
-                                                      d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
-                                            </svg>
-                                        </span>
-                                        <span class="text"> Masa Detayları </span>
-                                    </button>
-                                </a>
-                            }
-                            @if (role == "Admin" || allowedPages.Contains("TurnOfNotification"))
+                        if (activeOrders.Count != 0)
+                        {
+                            if (activeOrders.All(o => o.Status == 4 || o.Status == 6 || o.Status == 7 || o.Status == 8))
                             {
-                                <label class="notification-container">
-                                    <input type="checkbox" class="notification-checkbox" data-id="@table.Id" @(table.Notification ? "checked" : "") />
-                                    <svg fill="red"
-                                         viewBox="0 0 448 512"
-                                         height="1em"
-                                         xmlns="http://www.w3.org/2000/svg"
-                                         class="bell-regular">
-                                        <path d="M224 0c-17.7 0-32 14.3-32 32V49.9C119.5 61.4 64 124.2 64 200v33.4c0 45.4-15.5 89.5-43.8 124.9L5.3 377c-5.8 7.2-6.9 17.1-2.9 25.4S14.8 416 24 416H424c9.2 0 17.6-5.3 21.6-13.6s2.9-18.2-2.9-25.4l-14.9-18.6C399.5 322.9 384 278.8 384 233.4V200c0-75.8-55.5-138.6-128-150.1V32c0-17.7-14.3-32-32-32zm0 96h8c57.4 0 104 46.6 104 104v33.4c0 47.9 13.9 94.6 39.7 134.6H72.3C98.1 328 112 281.3 112 233.4V200c0-57.4 46.6-104 104-104h8zm64 352H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7s18.7-28.3 18.7-45.3z"></path>
-                                    </svg>
-                                    <svg fill="green"
-                                         viewBox="0 0 448 512"
-                                         height="1em"
-                                         xmlns="http://www.w3.org/2000/svg"
-                                         class="bell-solid">
-                                        <path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"></path>
-                                    </svg>
-                                </label>
+                                statusClass = "table-reserved";
+                                statusText = "Rezerve";
+                                statusIcon = "fa-calendar-check";
+                                bgClass = "bg-green";
                             }
-                            @if (role == "Admin" || allowedPages.Contains("CloseTable"))
+                            else if (activeOrders.All(o => o.Status == 5))
                             {
-                                <a href="#">
-                                    <button class="noselect close-table-btn" data-id="@table.Id">
-                                        <span class="text">Masayı Kapat</span>
-                                        <span class="icon">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
-                                                <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
-                                            </svg>
-                                        </span>
-                                    </button>
-                                </a>
+                                statusClass = "table-available";
+                                statusText = "Müsait";
+                                statusIcon = "fa-circle-check";
+                                bgClass = "bg-white";
                             }
+                            else if (activeOrders.Any(o => o.Status != 4 && o.Status != 5))
+                            {
+                                statusClass = "table-busy";
+                                statusText = "Dolu";
+                                statusIcon = "fa-utensils";
+                                bgClass = "bg-yellow";
+                            }
+                        }
+
+                        <div class="col-xl-4 col-lg-4 col-md-6">
+                            <div class="table-card card h-100 border-0 shadow-sm overflow-hidden @statusClass @bgClass">
+                                <div class="card-header d-flex justify-content-between align-items-center bg-white border-0 pb-0">
+                                    <h5 class="mb-0 fw-bold">
+                                        <i class="fas fa-table me-2"></i>@table.Name
+                                    </h5>
+                                    <span class="badge @statusClass-bg rounded-pill">
+                                        <i class="fas @statusIcon me-1"></i>@statusText
+                                    </span>
+                                </div>
+
+                                <div class="card-body pt-0">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <div>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">Sipariş:</small>
+                                            <div class="fw-bold">@activeOrders.Count Adet</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="progress mb-3" style="height: 6px;">
+                                        <div class="progress-bar @statusClass-bg" style="width: @(activeOrders.Count > 0 ? "100" : "0")%"></div>
+                                    </div>
+
+                                    <div class="d-flex justify-content-between gap-2">
+                                        @if (role == "Admin" || allowedPages.Contains("ViewTableDetails"))
+                                        {
+                                            <a href="#">
+                                                <button class="readmore-btn edit-table-btn"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#tableModal"
+                                                        data-id="@table.Id">
+                                                    <span class="book-wrapper">
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                             fill="rgb(86, 69, 117)"
+                                                             viewBox="0 0 126 75"
+                                                             class="book">
+                                                            <rect stroke-width="3"
+                                                                  stroke="#fff"
+                                                                  rx="7.5"
+                                                                  height="70"
+                                                                  width="121"
+                                                                  y="2.5"
+                                                                  x="2.5"></rect>
+                                                            <line stroke-width="3" stroke="#fff" y2="75" x2="63.5" x1="63.5"></line>
+                                                            <path stroke-linecap="round"
+                                                                  stroke-width="4"
+                                                                  stroke="#fff"
+                                                                  d="M25 20H50"></path>
+                                                            <path stroke-linecap="round"
+                                                                  stroke-width="4"
+                                                                  stroke="#fff"
+                                                                  d="M101 20H76"></path>
+                                                            <path stroke-linecap="round"
+                                                                  stroke-width="4"
+                                                                  stroke="#fff"
+                                                                  d="M16 30L50 30"></path>
+                                                            <path stroke-linecap="round"
+                                                                  stroke-width="4"
+                                                                  stroke="#fff"
+                                                                  d="M110 30L76 30"></path>
+                                                        </svg>
+
+                                                        <svg xmlns="http://www.w3.org/2000/svg"
+                                                             fill="none"
+                                                             viewBox="0 0 65 75"
+                                                             class="book-page">
+                                                            <path stroke-linecap="round"
+                                                                  stroke-width="4"
+                                                                  stroke="#fff"
+                                                                  d="M40 20H15"></path>
+                                                            <path stroke-linecap="round"
+                                                                  stroke-width="4"
+                                                                  stroke="#fff"
+                                                                  d="M49 30L15 30"></path>
+                                                            <path stroke-width="3"
+                                                                  stroke="#fff"
+                                                                  d="M2.5 2.5H55C59.1421 2.5 62.5 5.85786 62.5 10V65C62.5 69.1421 59.1421 72.5 55 72.5H2.5V2.5Z"></path>
+                                                        </svg>
+                                                    </span>
+                                                    <span class="text"> Masa Detayları </span>
+                                                </button>
+                                            </a>
+
+                                        }
+
+                                        @if (role == "Admin" || allowedPages.Contains("TurnOfNotification"))
+                                        {
+                                            <label class="notification-container">
+                                                <input type="checkbox" class="notification-checkbox" data-id="@table.Id" @(table.Notification ? "checked" : "") />
+                                                <svg fill="red"
+                                                     viewBox="0 0 448 512"
+                                                     height="1em"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     class="bell-regular">
+                                                    <path d="M224 0c-17.7 0-32 14.3-32 32V49.9C119.5 61.4 64 124.2 64 200v33.4c0 45.4-15.5 89.5-43.8 124.9L5.3 377c-5.8 7.2-6.9 17.1-2.9 25.4S14.8 416 24 416H424c9.2 0 17.6-5.3 21.6-13.6s2.9-18.2-2.9-25.4l-14.9-18.6C399.5 322.9 384 278.8 384 233.4V200c0-75.8-55.5-138.6-128-150.1V32c0-17.7-14.3-32-32-32zm0 96h8c57.4 0 104 46.6 104 104v33.4c0 47.9 13.9 94.6 39.7 134.6H72.3C98.1 328 112 281.3 112 233.4V200c0-57.4 46.6-104 104-104h8zm64 352H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7s18.7-28.3 18.7-45.3z"></path>
+                                                </svg>
+                                                <svg fill="green"
+                                                     viewBox="0 0 448 512"
+                                                     height="1em"
+                                                     xmlns="http://www.w3.org/2000/svg"
+                                                     class="bell-solid">
+                                                    <path d="M224 0c-17.7 0-32 14.3-32 32V51.2C119 66 64 130.6 64 208v18.8c0 47-17.3 92.4-48.5 127.6l-7.4 8.3c-8.4 9.4-10.4 22.9-5.3 34.4S19.4 416 32 416H416c12.6 0 24-7.4 29.2-18.9s3.1-25-5.3-34.4l-7.4-8.3C401.3 319.2 384 273.9 384 226.8V208c0-77.4-55-142-128-156.8V32c0-17.7-14.3-32-32-32zm45.3 493.3c12-12 18.7-28.3 18.7-45.3H224 160c0 17 6.7 33.3 18.7 45.3s28.3 18.7 45.3 18.7s33.3-6.7 45.3-18.7z"></path>
+                                                </svg>
+                                            </label>
+                                        }
+
+                                        @if (role == "Admin" || allowedPages.Contains("CloseTable"))
+                                        {
+                                            <a href="#">
+                                                <button class="noselect close-table-btn" data-id="@table.Id">
+                                                    <span class="text">Masayı Kapat</span>
+                                                    <span class="icon">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+                                                            <path d="M24 20.188l-8.315-8.209 8.2-8.282-3.697-3.697-8.212 8.318-8.31-8.203-3.666 3.666 8.321 8.24-8.206 8.313 3.666 3.666 8.237-8.318 8.285 8.203z"></path>
+                                                        </svg>
+                                                    </span>
+                                                </button>
+                                            </a>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    }
                 </div>
             </div>
         }
     </div>
-}
+</div>
 
 <!-- Modal -->
 <div class="modal fade" id="tableModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Masa Detayları</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content border-0">
+            <div class="modal-header bg-primary text-white">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-utensils me-3 fs-4"></i>
+                    <h5 class="modal-title mb-0 text-white fw-bold" id="modalTableName"></h5>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <h3 id="modalTableName"></h3>
-                <hr />
-                <div id="orderList"></div>
 
-                <div class="d-flex justify-content-between align-items-start mt-3 mb-3">
-                    <div>
-                        <strong>Seçilen Ürünlerin Tutarı: <span id="selectedAmount">0</span> TL</strong>
+            <div class="modal-body p-0">
+                <!-- Ana İçerik -->
+                <div class="row g-0">
+                    <!-- Sipariş Listesi -->
+                    <div class="col-lg-8 p-4 border-end">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" style="table-layout: fixed;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="40">
+                                            <input type="checkbox" class="form-check-input" id="selectAllOrders">
+                                        </th>
+                                        <th style="width: 45%;">ÜRÜN ADI</th>
+                                        <th style="width: 25%;" class="text-center">DURUM</th>
+                                        <th style="width: 20%;" class="text-end">TUTAR</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orderList">
+                                    <!-- Siparişler dinamik olarak buraya eklenecek -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div class="text-end">
-                        <strong>Toplam Tutar: <span id="totalAmount">0</span> TL</strong><br>
-                        <strong>Ödenen Tutar: <span id="paidAmount">0</span> TL</strong><br>
-                        <div id="cancelledRow" style="display: none;">
-                            <strong>İptal Tutarı: <span id="cancelledAmount">0</span> TL</strong><br>
+                    <!-- Ödeme ve İşlem Paneli -->
+                    <div class="col-lg-4 p-4">
+                        <!-- Özet Bilgiler -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-0 pt-3">
+                                <h6 class="fw-bold mb-0">Özet Bilgiler</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span class="text-muted">Toplam Tutar:</span>
+                                    <span class="fw-bold" id="totalAmount">0.00 TL</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-success">
+                                    <span class="text-muted">Ödenen Tutar:</span>
+                                    <span class="fw-bold" id="paidAmount">0.00 TL</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-danger" id="cancelledRow" style="display:none;">
+                                    <span class="text-muted">İptal Tutarı:</span>
+                                    <span class="fw-bold" id="cancelledAmount">0.00 TL</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-warning" id="returnedRow" style="display:none;">
+                                    <span class="text-muted">İade Tutarı:</span>
+                                    <span class="fw-bold" id="returnedAmount">0.00 TL</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2 text-info" id="bonusRow" style="display:none;">
+                                    <span class="text-muted">İkram Tutarı:</span>
+                                    <span class="fw-bold" id="bonusAmount">0.00 TL</span>
+                                </div>
+                                <hr>
+                                <div class="d-flex justify-content-between fw-bold fs-5">
+                                    <span>Kalan Tutar:</span>
+                                    <span class="text-primary" id="remainingAmount">0.00 TL</span>
+                                </div>
+                            </div>
                         </div>
-                        <div id="returnedRow" style="display: none;">
-                            <strong>İade Tutarı: <span id="returnedAmount">0</span> TL</strong><br>
+
+                        <!-- Seçilenler Özeti -->
+                        <div class="card border-0 shadow-sm mb-4" id="selectedItemsCard" style="display: none;">
+                            <div class="card-header bg-white border-0 pt-3">
+                                <h6 class="fw-bold mb-0">Seçilen Ürünler</h6>
+                            </div>
+                            <div class="card-body">
+                                <div id="selectedItemsList" class="mb-2"></div>
+                                <div class="d-flex justify-content-between fw-bold">
+                                    <span>Toplam:</span>
+                                    <span id="selectedAmount">0.00 TL</span>
+                                </div>
+                            </div>
                         </div>
-                        <div id="bonusRow" style="display: none;">
-                            <strong>İkram Tutarı: <span id="bonusAmount">0</span> TL</strong><br>
+
+                        <!-- İşlem Butonları -->
+                        <div class="d-grid gap-2">
+                            <div class="btn-group w-100 mb-2">
+                                @if (role == "Admin" || allowedPages.Contains("Payment"))
+                                {
+                                    <button id="payCardBtn" class="btn btn-primary flex-grow-1">
+                                        <i class="fas fa-credit-card me-2"></i>Kart ile Öde
+                                    </button>
+                                    <button id="payCashBtn" class="btn btn-success flex-grow-1">
+                                        <i class="fas fa-money-bill-wave me-2"></i>Nakit Öde
+                                    </button>
+                                }
+                            </div>
+
+                            @if (role == "Admin" || allowedPages.Contains("Payment"))
+                            {
+                                <button id="partialPayBtn" class="btn btn-secondary w-100 mb-2" disabled>
+                                    <i class="fas fa-money-check-alt me-2"></i>Seçilenleri Öde
+                                </button>
+                            }
+
+                            <div class="btn-group w-100 mb-2">
+                                @if (role == "Admin" || allowedPages.Contains("ConfirmOrder"))
+                                {
+                                    <button id="confirmOrderBtn" class="btn btn-warning flex-grow-1" disabled>
+                                        <i class="fas fa-check-circle me-2"></i>Onayla
+                                    </button>
+                                }
+                                @if (role == "Admin" || allowedPages.Contains("DeliverTheOrder"))
+                                {
+                                    <button id="deliverTheOrderBtn" class="btn btn-info flex-grow-1" disabled>
+                                        <i class="fas fa-truck me-2"></i>Teslim Et
+                                    </button>
+                                }
+                            </div>
+
+                            <div class="btn-group w-100 mb-2">
+                                @if (role == "Admin" || allowedPages.Contains("CancelOrders"))
+                                {
+                                    <button id="cancelSelectedOrdersBtn" class="btn btn-outline-danger flex-grow-1" disabled>
+                                        <i class="fas fa-times-circle me-2"></i>İptal Et
+                                    </button>
+                                }
+                                @if (role == "Admin" || allowedPages.Contains("ReturnOrders"))
+                                {
+                                    <button id="returnSelectedOrdersBtn" class="btn btn-outline-warning flex-grow-1" disabled>
+                                        <i class="fas fa-undo me-2"></i>İade Et
+                                    </button>
+                                }
+                                @if (role == "Admin" || allowedPages.Contains("BonusOrders"))
+                                {
+                                    <button id="bonusSelectedOrdersBtn" class="btn btn-outline-success flex-grow-1" disabled>
+                                        <i class="fas fa-gift me-2"></i>İkram Et
+                                    </button>
+                                }
+                            </div>
+
+                            @if (role == "Admin" || allowedPages.Contains("MoveTableAndOrders"))
+                            {
+                                <div class="mb-3">
+                                    <label class="form-label">Masayı Taşı</label>
+                                    <select id="moveTableSelect" class="form-select">
+                                        <option value="">-- Hedef Masa Seçin --</option>
+                                        <!-- Bölümlere göre gruplanmış masalar buraya eklenecek -->
+                                    </select>
+                                    <div class="btn-group w-100 mt-2">
+                                        <button id="moveTableBtn" class="btn btn-outline-primary">
+                                            <i class="fas fa-arrows-alt me-1"></i>Tümünü Taşı
+                                        </button>
+                                        <button id="moveSelectedOrdersBtn" class="btn btn-outline-info" disabled>
+                                            <i class="fas fa-exchange-alt me-1"></i>Seçilenleri Taşı
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+
+                            @if (role == "Admin" || allowedPages.Contains("AddOrders"))
+                            {
+                                <div class="d-flex justify-content-center">
+                                    <button class="addimg" id="openOrderModalBtn">
+                                        <span class="addimg__text">Sipariş Ekle</span>
+                                        <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
+                                    </button>
+                                </div>
+
+                            }
                         </div>
-                        <strong>Kalan Tutar: <span id="remainingAmount">0</span> TL</strong>
                     </div>
-                </div>
-
-                <div class="d-flex justify-content-between">
-                    <div class="d-flex gap-2">
-                        @if (role == "Admin" || allowedPages.Contains("Payment"))
-                        {
-                            <button id="partialPayBtn" class="btn btn-secondary" disabled>Seçilenleri Öde</button>
-                        }
-                    </div>
-                    <div class="d-flex gap-2">
-                        @if (role == "Admin" || allowedPages.Contains("Payment"))
-                        {
-                            <button id="payCardBtn" class="btn btn-primary">Kart ile Ödendi</button>
-                            <button id="payCashBtn" class="btn btn-success">Nakit Ödendi</button>
-                        }
-                    </div>
-                </div>
-
-                <div class="mb-3 mt-3 d-flex gap-5">
-                    @if (role == "Admin" || allowedPages.Contains("ConfirmOrder"))
-                    {
-                        <button id="confirmOrderBtn" class="btn btn-danger mt-2" disabled>Onayla</button>
-                    }
-                    @if (role == "Admin" || allowedPages.Contains("DeliverTheOrder"))
-                    {
-                        <button id="deliverTheOrderBtn" class="btn btn-danger mt-2" disabled>Teslim Et</button>
-                    }
-                </div>
-
-                <div class="mb-3 mt-3 d-flex gap-5">
-                    @if (role == "Admin" || allowedPages.Contains("CancelOrders"))
-                    {
-                        <button id="cancelSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İptal Et</button>
-                    }
-                    @if (role == "Admin" || allowedPages.Contains("ReturnOrders"))
-                    {
-                        <button id="returnSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İade Et</button>
-                    }
-                    @if (role == "Admin" || allowedPages.Contains("BonusOrders"))
-                    {
-                        <button id="bonusSelectedOrdersBtn" class="btn btn-danger mt-2" disabled>Seçilenleri İkram Et</button>
-                    }
-                </div>
-
-                <div class="mb-3 mt-3">
-                    @if (role == "Admin" || allowedPages.Contains("MoveTableAndOrders"))
-                    {
-                        <label for="moveTableSelect" class="form-label">Masayı Taşı</label>
-                        <select id="moveTableSelect" class="form-select"></select>
-                        <button id="moveTableBtn" class="btn btn-warning mt-2">Tümünü Taşı</button>
-                        <button id="moveSelectedOrdersBtn" class="btn btn-info mt-2" disabled>Seçilenleri Taşı</button>
-                    }
-                    @if (role == "Admin" || allowedPages.Contains("AddOrders"))
-                    {
-                        <div class="d-flex justify-content-end">
-                            <button class="addimg" id="openOrderModalBtn">
-                                <span class="addimg__text">Sipariş Ekle</span>
-                                <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
-                            </button>
-                        </div>
-                    }
                 </div>
             </div>
         </div>
@@ -258,24 +376,71 @@
 @if (role == "Admin" || allowedPages.Contains("Payment"))
 {
     <div class="modal fade" id="paymentMethodModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
                 <div class="modal-header">
-                    <h5 class="modal-title">Parçalı Ödeme</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    <h5 class="modal-title fw-bold">Parçalı Ödeme</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body">
-                    <div id="splitOrderList" class="mb-3 border p-2 rounded bg-light"></div>
-                    <p>Toplam: <strong><span id="splitTotalAmount">0</span> TL</strong></p>
-                    <div class="form-group mb-3">
-                        <label>Kart ile Ödenen</label>
-                        <input type="text" class="form-control" id="splitCardAmount" />
+                <div class="modal-body p-0">
+                    <div class="row g-0">
+                        <!-- Ürün Listesi Bölümü -->
+                        <div class="col-md-6 p-4 border-end">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h6 class="m-0 text-uppercase text-muted fw-bold small">Ödenecek Ürünler</h6>
+                            </div>
+
+                            <div id="splitOrderList" class="list-group list-group-flush mb-4" style="max-height: 300px; overflow-y: auto;"></div>
+
+                            <div class="bg-light p-3 rounded">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold fs-5">TOPLAM</span>
+                                    <span id="splitTotalAmount" class="fw-bold fs-5 text-primary">0.00 ₺</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ödeme Yöntemleri Bölümü -->
+                        <div class="col-md-12 p-4">
+                            <div class="mb-4">
+                                <h6 class="text-uppercase text-muted fw-bold small mb-3">ÖDEME YÖNTEMLERİ</h6>
+
+                                <!-- Kart ile Ödeme -->
+                                <div class="payment-method-card mb-4 p-3 rounded-3">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="payment-icon bg-primary text-white rounded-circle me-3">
+                                            <i class="fas fa-credit-card"></i>
+                                        </div>
+                                        <h6 class="m-0 fw-bold">Kart ile Ödeme</h6>
+                                    </div>
+                                    <div class="input-group mb-2">
+                                        <input type="text" class="form-control" id="splitCardAmount" placeholder="0.00" style="height: 48px;">
+                                    </div>
+                                </div>
+
+                                <!-- Nakit Ödeme -->
+                                <div class="payment-method-card mb-4 p-3 rounded-3">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div class="payment-icon bg-success text-white rounded-circle me-3">
+                                            <i class="fas fa-money-bill-wave"></i>
+                                        </div>
+                                        <h6 class="m-0 fw-bold">Nakit Ödeme</h6>
+                                    </div>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="splitCashAmount" placeholder="0.00" style="height: 48px;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Butonlar -->
+                            <div class="modal-footer bg-light">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                                <button id="addOrderBtn" class="btn btn-primary">
+                                    <i class="fas fa-check-circle me-2"></i>Ödemeyi Tamamla
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group mb-3">
-                        <label>Nakit ile Ödenen</label>
-                        <input type="text" class="form-control" id="splitCashAmount" />
-                    </div>
-                    <button id="confirmSplitPayment" class="btn btn-primary w-100">Ödemeyi Tamamla</button>
                 </div>
             </div>
         </div>
@@ -285,38 +450,56 @@
 <!-- Sipariş Ekle Modalı -->
 @if (role == "Admin" || allowedPages.Contains("AddOrders"))
 {
-    <div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content p-3">
-                <div class="modal-header">
-                    <h5 class="modal-title">Sipariş Ekle</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="modal fade" id="orderModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Yeni Sipariş Ekle</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <!-- Kategori Seçimleri -->
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Kategori</label>
+                        <select id="menuCategorySelect" class="form-select">
+                            <option value="" selected disabled>Kategori seçiniz</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Alt Kategori</label>
+                        <select id="subMenuCategorySelect" class="form-select" disabled>
+                            <option value="" selected disabled>Önce kategori seçiniz</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Kategori Seç</label>
-                        <select id="menuCategorySelect" class="form-select"></select>
+
+                <!-- Ürün Listesi -->
+                <div class="mt-4">
+                    <h6 class="fw-bold mb-3 border-bottom pb-2">Ürünler</h6>
+                    <div id="productCheckboxList" class="row g-3">
+                        <div class="col-12 text-muted">
+                            Lütfen önce alt kategori seçiniz
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Alt Kategori Seç</label>
-                        <select id="subMenuCategorySelect" class="form-select"></select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Ürün Seç</label>
-                        <div id="productCheckboxList" class="d-flex flex-wrap gap-2"></div>
-                    </div>
-                    <button id="addOrderBtn" class="btn btn-primary">Siparişleri Ekle</button>
                 </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button id="addOrderBtn" class="btn btn-primary">
+                    <i class="fas fa-plus-circle me-2"></i>Siparişleri Ekle
+                </button>
             </div>
         </div>
     </div>
+</div>
 }
 
 <!-- İade Sebebi Modalı -->
 @if (role == "Admin" || allowedPages.Contains("ReturnOrders"))
 {
     <div class="modal fade" id="returnReasonModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">İade Sebebi</h5>
@@ -362,6 +545,8 @@
                     let orderStatusText = '';
                     let rowClass = '';
                     let price = o.price || 0;
+                    let textClass = '';
+                    let iconHtml = '';
 
                     // Her sipariş, toplam tutara eklenecek (durumu ne olursa olsun)
                     totalAmount += price;
@@ -379,65 +564,44 @@
                         case 4:
                             orderStatusText = 'Ödendi';
                             paidAmount += price;
+                            rowClass = 'bg-light-paid';
+                            textClass = 'text-success';
+                            iconHtml = '<i class="bi bi-check-circle-fill text-success"></i>';
                             break;
                         case 6:
                             orderStatusText = 'İade Edildi';
-                            rowClass = 'bg-light-return';
                             returnAmount += price;
+                            rowClass = 'bg-light-return';
+                            textClass = 'text-danger';
+                            iconHtml = '<i class="bi bi-arrow-counterclockwise text-danger"></i>';
                             break;
                         case 7:
                             orderStatusText = 'İptal Edildi';
-                            rowClass = 'bg-light-cancel';
                             cancelAmount += price;
+                            rowClass = 'bg-light-cancel';
+                            textClass = 'text-danger';
+                            iconHtml = '<i class="bi bi-trash-fill text-danger"></i>';
                             break;
                         case 8:
                             orderStatusText = 'İkram Edildi';
-                            rowClass = 'bg-light-bonus';
                             bonusAmount += price;
+                            rowClass = 'bg-light-bonus';
+                            textClass = 'text-info';
+                            iconHtml = '<i class="bi bi-gift-fill text-info"></i>';
                             break;
                     }
 
-                    if ([4, 6, 7, 8].includes(o.status)) {
-                        let iconHtml = '';
-                        let textClass = 'text-muted';
-
-                        if (o.status === 4) {
-                            iconHtml = '<i class="bi bi-check-circle-fill text-success"></i>';
-                            textClass = 'text-success';
-                        } else if (o.status === 6) {
-                            iconHtml = '<i class="bi bi-arrow-counterclockwise text-danger"></i>';
-                            textClass = 'text-danger';
-                        } else if (o.status === 7) {
-                            iconHtml = '<i class="bi bi-trash-fill text-danger"></i>';
-                            textClass = 'text-danger';
-                        } else if (o.status === 8) {
-                            iconHtml = '<i class="bi bi-gift-fill text-info"></i>';
-                            textClass = 'text-info';
-                        }
-
-                        return `
-                            <div class="d-flex justify-content-between align-items-center border-bottom py-1 ${rowClass}">
-                                <div>${o.productName}</div>
-                                <div class="d-flex justify-content-end align-items-center gap-2 ${textClass}">
-                                    ${iconHtml} ${orderStatusText}
-                                </div>
-                                <div>
-                                    ${o.price.toFixed(2)} TL
-                                </div>
-                            </div>`;
-                    }
-
                     return `
-                        <div class="d-flex justify-content-between align-items-center border-bottom py-1">
-                            <div>
-                                <input type="checkbox" class="form-check-input order-checkbox me-2" data-id="${o.id}" data-price="${price}" />
-                                ${o.productName}
-                            </div>
-                            <div class="d-flex justify-content-center flex-grow-1">
-                                <span class="order-status">${orderStatusText}</span>
-                            </div>
-                            <span class="price">${price.toFixed(2)} TL</span>
-                        </div>`;
+                        <tr class="${rowClass}">
+                            <td width="40">
+                                ${![4,6,7,8].includes(o.status) ? `<input type="checkbox" class="form-check-input order-checkbox" data-id="${o.id}" data-price="${price}" />` : ''}
+                            </td>
+                            <td style="width: 45%;">${o.productName}</td>
+                            <td style="width: 25%;" class="text-center ${textClass}">
+                                ${iconHtml} ${orderStatusText}
+                            </td>
+                            <td style="width: 20%;" class="text-end">${price.toFixed(2)} TL</td>
+                        </tr>`;
                 }).join('');
 
                 $('#orderList').html(orders);
@@ -457,10 +621,34 @@
                 $('#selectedAmount').text(0);
                 togglePaymentButtons(totalAmount > 0);
 
-                $('#moveTableSelect').empty();
-                data.allTables.forEach(t => {
-                    if (t.id !== tableId)
-                        $('#moveTableSelect').append(`<option value="${t.id}">${t.name}</option>`);
+                // Masaları bölümlere göre grupla
+                const groupedTables = {};
+                data.allTables.forEach(table => {
+                    if (table.id !== tableId) {
+                        const section = table.sectionName?.trim() ? table.sectionName.trim() : 'Diğer';
+                        if (!groupedTables[section]) {
+                            groupedTables[section] = [];
+                        }
+                        groupedTables[section].push(table);
+                    }
+                });
+
+                // Gruplanmış masaları dropdown'a ekle
+                $('#moveTableSelect').empty().append('<option value="">-- Hedef Masa Seçin --</option>');
+
+                // Bölümleri alfabetik sırala
+                const sortedSections = Object.keys(groupedTables).sort();
+
+                sortedSections.forEach(section => {
+                    // Bölüm başlığı ekle (optgroup)
+                    const $optgroup = $('<optgroup>').attr('label', section);
+
+                    // Masaları bölüm içinde alfabetik sırala
+                    groupedTables[section].sort((a, b) => a.name.localeCompare(b.name)).forEach(table => {
+                        $optgroup.append(`<option value="${table.id}">${table.name}</option>`);
+                    });
+
+                    $('#moveTableSelect').append($optgroup);
                 });
             });
         }
@@ -490,9 +678,13 @@
             $('#splitCashAmount').val('');
 
             let selectedItems = $('.order-checkbox:checked').map(function () {
-                const productName = $(this).closest('div').text().trim();
+                const row = $(this).closest('tr');
+                const productName = row.find('td:nth-child(2)').text().trim();
                 const price = parseFloat($(this).data('price')).toFixed(2);
-                return `<div class="d-flex justify-content-between"><span>${productName}</span><span>${price} TL</span></div>`;
+                return `<div class="d-flex justify-content-between border-bottom py-2">
+                    <span>${productName}</span>
+                    <span>${price} ₺</span>
+                </div>`;
             }).get().join('');
 
             $('#splitOrderList').html(selectedItems);
@@ -759,25 +951,31 @@
             });
         });
 
-        $('#orderModal').on('hidden.bs.modal', function () {
+            $('#orderModal').on('hidden.bs.modal', function () {
             $('#tableModal').modal('show');
         });
 
         $('.addimg').click(function () {
             $.get('/Table/GetDayStatus', function (res) {
                 if (!res.isDayOpen) {
-                    alert("Gün başlatılmadı veya gün sonu alındı. Sipariş eklenemez.");
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'İşlem Başarısız',
+                        text: 'Gün başlatılmadı veya gün sonu alındı. Sipariş eklenemez.',
+                        confirmButtonColor: '#3085d6'
+                    });
                     return;
                 }
 
-                // Gün açıksa devam et
+                // Reset form
                 $('#menuCategorySelect').val('');
-                $('#subMenuCategorySelect').empty();
-                $('#productCheckboxList').empty();
+                $('#subMenuCategorySelect').empty().prop('disabled', true)
+                    .html('<option value="" selected disabled>Önce kategori seçiniz</option>');
+                $('#productCheckboxList').html('<div class="col-12 text-muted">Lütfen önce alt kategori seçiniz</div>');
 
                 // Kategorileri yükle
                 $.get('/Table/GetMenuCategories', function (data) {
-                    $('#menuCategorySelect').html('<option value="">Seçiniz</option>');
+                    $('#menuCategorySelect').html('<option value="" selected disabled>Kategori seçiniz</option>');
                     data.forEach(item => {
                         $('#menuCategorySelect').append(`<option value="${item.id}">${item.categoryName}</option>`);
                     });
@@ -789,42 +987,111 @@
             });
         });
 
+        // Kategori değiştiğinde
         $('#menuCategorySelect').change(function () {
             const categoryId = $(this).val();
+            if (!categoryId) {
+                $('#subMenuCategorySelect').empty().prop('disabled', true)
+                    .html('<option value="" selected disabled>Önce kategori seçiniz</option>');
+                $('#productCheckboxList').html('<div class="col-12 text-muted">Lütfen önce alt kategori seçiniz</div>');
+                return;
+            }
+
             $.get(`/Table/GetSubMenuCategories?categoryId=${categoryId}`, function (data) {
-                $('#subMenuCategorySelect').html('<option value="">Seçiniz</option>');
-                data.forEach(item => {
-                    $('#subMenuCategorySelect').append(`<option value="${item.id}">${item.subCategoryName}</option>`);
-                });
+                $('#subMenuCategorySelect').empty().prop('disabled', false)
+                    .html('<option value="" selected disabled>Alt kategori seçiniz</option>');
+
+                if (data.length === 0) {
+                    $('#subMenuCategorySelect').append('<option value="" selected disabled>Bu kategoride alt kategori yok</option>');
+                } else {
+                    data.forEach(item => {
+                        $('#subMenuCategorySelect').append(`<option value="${item.id}">${item.subCategoryName}</option>`);
+                    });
+                }
             });
         });
 
+        // Alt kategori değiştiğinde
         $('#subMenuCategorySelect').change(function () {
             const subCategoryId = $(this).val();
+            if (!subCategoryId) {
+                $('#productCheckboxList').html('<div class="col-12 text-muted">Lütfen bir alt kategori seçiniz</div>');
+                return;
+            }
+
             $.get(`/Table/GetProducts?subCategoryId=${subCategoryId}`, function (data) {
+                if (data.length === 0) {
+                    $('#productCheckboxList').html('<div class="col-12 text-muted">Bu kategoride ürün bulunamadı</div>');
+                    return;
+                }
+
                 let html = '';
                 data.forEach(item => {
                     html += `
-                        <div class="form-check">
-                            <input class="form-check-input product-checkbox" type="checkbox" value="${item.id}" id="prod${item.id}">
-                            <label class="form-check-label me-2" for="prod${item.id}">
-                                ${item.name} - ${item.price.toFixed(2)} TL
-                            </label>
-                            <input type="number" min="1" max="${item.stockCount ?? ''}" value="1" class="form-control form-control-sm product-quantity" data-product-id="${item.id}" style="width: 60px;" />
+                        <div class="col-md-6 col-lg-4">
+                            <div class="product-card" data-product-id="${item.id}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h6 class="mb-0 fw-bold">${item.name}</h6>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input product-checkbox" type="checkbox"
+                                            value="${item.id}" id="prod${item.id}">
+                                    </div>
+                                </div>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="product-image-placeholder">
+                                        <i class="fas fa-utensils"></i>
+                                    </div>
+                                    <div>
+                                        <div class="product-price mb-2">${item.price.toFixed(2)} TL</div>
+                                        <div class="quantity-control">
+                                            <button class="btn btn-sm btn-outline-secondary quantity-decrease"
+                                                data-product-id="${item.id}">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                            <input type="number" min="1" max="${item.stockCount ?? 99}"
+                                                value="1" class="form-control form-control-sm product-quantity"
+                                                data-product-id="${item.id}">
+                                            <button class="btn btn-sm btn-outline-secondary quantity-increase"
+                                                data-product-id="${item.id}">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>`;
                 });
                 $('#productCheckboxList').html(html);
             });
         });
 
-        $(document).on('input', '.product-quantity', function () {
-            const max = parseInt($(this).attr('max'));
-            let val = parseInt($(this).val());
+        // Miktar artırma/azaltma butonları
+        $(document).on('click', '.quantity-decrease', function() {
+            const productId = $(this).data('product-id');
+            const input = $(`.product-quantity[data-product-id="${productId}"]`);
+            let val = parseInt(input.val()) || 1;
+            if (val > 1) {
+                input.val(val - 1);
+            }
+        });
 
-            if (val > max) {
-                $(this).val(max);
-            } else if (val < 1 || isNaN(val)) {
-                $(this).val(1);
+        $(document).on('click', '.quantity-increase', function() {
+            const productId = $(this).data('product-id');
+            const input = $(`.product-quantity[data-product-id="${productId}"]`);
+            const max = parseInt(input.attr('max')) || 99;
+            let val = parseInt(input.val()) || 1;
+            if (val < max) {
+                input.val(val + 1);
+            }
+        });
+
+        // Checkbox durumuna göre kart stilini değiştir
+        $(document).on('change', '.product-checkbox', function() {
+            const card = $(this).closest('.product-card');
+            if ($(this).is(':checked')) {
+                card.addClass('selected');
+            } else {
+                card.removeClass('selected');
             }
         });
 
@@ -890,6 +1157,37 @@
                         checkbox.checked = !isChecked;
                     });
             });
+        });
+
+        $(document).ready(function() {
+            // Tümünü seç
+            $('#selectAllOrders').change(function() {
+                $('.order-checkbox').prop('checked', $(this).prop('checked'));
+                updateSelectedItems();
+            });
+
+            // Sipariş seçimlerini takip et
+            $('body').on('change', '.order-checkbox', function() {
+                updateSelectedItems();
+            });
+
+            function updateSelectedItems() {
+                var selectedCount = $('.order-checkbox:checked').length;
+                var selectedAmount = 0;
+
+                $('.order-checkbox:checked').each(function() {
+                    selectedAmount += parseFloat($(this).data('price'));
+                });
+
+                if (selectedCount > 0) {
+                    $('#selectedItemsCard').show();
+                    $('#selectedAmount').text(selectedAmount.toFixed(2) + ' TL');
+                    $('[id$="Btn"]:not(#selectAllOrders)').prop('disabled', false);
+                } else {
+                    $('#selectedItemsCard').hide();
+                    $('[id$="Btn"]:not(#selectAllOrders)').prop('disabled', true);
+                }
+            }
         });
     </script>
 }

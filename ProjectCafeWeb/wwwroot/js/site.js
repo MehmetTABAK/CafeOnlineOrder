@@ -88,11 +88,9 @@ document.addEventListener('DOMContentLoaded', () => {
         discountRadios.forEach(radio => {
             radio.addEventListener("change", function () {
                 if (this.value === "yes") {
-                    discountInput.classList.remove("discount-hidden");
-                    discountLabel.classList.remove("discount-hidden");
+                    discountContainer.classList.remove('discount-hidden');
                 } else {
-                    discountInput.classList.add("discount-hidden");
-                    discountLabel.classList.add("discount-hidden");
+                    discountContainer.classList.add('discount-hidden');
                     discountInput.value = ""; // Temizle
                 }
             });

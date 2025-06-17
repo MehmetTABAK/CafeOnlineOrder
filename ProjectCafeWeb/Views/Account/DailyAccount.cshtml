@@ -15,127 +15,272 @@
     var allowedPages = !string.IsNullOrEmpty(permissionsJson) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(permissionsJson) : new List<string>();
 }
 
-@if (ViewData["SelectedReport"] is ProjectCafeEntities.DailyReport currentReport)
-{
-    <div class="alert alert-info">
-        <strong>Rapor Tarihi:</strong> @currentReport.StartTime.ToString("dd.MM.yyyy HH:mm")
-        @if (currentReport.EndTime != null)
-        {
-            <span><strong> - </strong>@currentReport.EndTime?.ToString("dd.MM.yyyy HH:mm")</span>
-        }
-        else
-        {
-            <span class="badge bg-warning text-dark">Gün devam ediyor</span>
-        }
-    </div>
-}
-
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-}
-
-<div class="container py-4">
-    <h2 class="mb-3">Günlük Rapor</h2>
-
-    <div class="mb-3">
-        @if (ViewData["AllReports"] is List<ProjectCafeEntities.DailyReport> reports)
-        {
-            <form method="get" action="/gunluk-islemler">
-                <div class="input-group mb-3">
-                    <label class="input-group-text">Günlük Rapor Seç</label>
-                    <select class="form-select" name="rapor" onchange="this.form.submit()">
-                        <option value="">-- Aktif Gün --</option>
-                        @foreach (var r in reports)
-                        {
-                            var isSelected = ViewData["SelectedReport"] != null &&
-                            ((ProjectCafeEntities.DailyReport)ViewData["SelectedReport"]).Id == r.Id;
-
-                            <option value="@r.Id" selected="@(isSelected ? "selected" : null)">
-                                @r.StartTime.ToString("dd.MM.yyyy HH:mm")
-                                @if (r.EndTime != null)
-                                {
-                                    @(" - " + r.EndTime?.ToString("dd.MM.yyyy HH:mm"))
-                                }
-                                else
-                                {
-
-                                    @(" - (devam ediyor)")
-                                }
-                            </option>
-                        }
-                    </select>
-                </div>
-            </form>
-        }
-    </div>
-
-    <div class="mb-4">
-        @if (role == "Admin" || allowedPages.Contains("StartDay"))
-        {
-            <form method="post" asp-action="StartDay" style="display: inline-block;">
-                <button class="btn btn-success">Gün Başlat</button>
-            </form>
-        }
-        @if (role == "Admin" || allowedPages.Contains("EndDay"))
-        {
-            <form asp-action="EndDay" method="post" style="display:inline;">
-                <button type="submit" class="btn btn-danger">Gün Sonu Al</button>
-            </form>
-        }
-    </div>
-
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>Saat</th>
-                <th>Masa</th>
-                <th>Tutar</th>
-                <th>Ödeme Yöntemi</th>
-                <th>Açıklama</th>
-                <th>Kullanıcı</th>
-                <th>Tarih</th>
-            </tr>
-        </thead>
-        @if (role == "Admin" || allowedPages.Contains("DailyReportView"))
-        {
-            <tbody>
-                @foreach (var item in Model)
+<div class="container-fluid py-4">
+    <!-- Başlık ve Rapor Bilgisi -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="page-header d-flex justify-content-between align-items-center">
+                <h2 class="mb-0"><i class="fas fa-chart-line me-2"></i>Günlük Rapor</h2>
+                @if (ViewData["SelectedReport"] is ProjectCafeEntities.DailyReport currentReport)
                 {
-                    <tr>
-                        <td>@item.RegistrationDate.ToString("HH:mm")</td>
-                        <td>@item.TableName</td>
-                        <td>@item.TotalPrice.ToString("N2") ₺</td>
-                        <td>@item.PaymentMethod</td>
-                        <td>@item.Comment</td>
-                        <td>@item.RegistrationUserFullName</td>
-                        <td>@item.Date</td>
-                    </tr>
+                    <div class="report-info alert alert-light border">
+                        <strong><i class="far fa-calendar-alt me-2"></i>Rapor Tarihi:</strong>
+                        <span>@currentReport.StartTime.ToString("dd.MM.yyyy HH:mm")</span>
+                        @if (currentReport.EndTime != null)
+                        {
+                            <span><strong> - </strong>@currentReport.EndTime?.ToString("dd.MM.yyyy HH:mm")</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark ms-2"><i class="fas fa-spinner fa-spin me-1"></i>Devam ediyor</span>
+                        }
+                    </div>
                 }
-            </tbody>
+            </div>
+        </div>
+    </div>
 
+    <!-- Bilgi Mesajları -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
-            @if (ViewBag.TotalCard != null)
-            {
-                <div class="row mb-4">
-                    <div class="col-md-2"><strong>Toplam Kazanç:</strong> @((double)ViewBag.TotalCardAndCash) ₺</div>
-                    <div class="col-md-2"><strong>Toplam Kart:</strong> @((double)ViewBag.TotalCard) ₺</div>
-                    <div class="col-md-2"><strong>Toplam Nakit:</strong> @((double)ViewBag.TotalCash) ₺</div>
-                    <div class="col-md-2"><strong>Toplam İkram:</strong> @((double)ViewBag.TotalBonus) ₺</div>
-                    <div class="col-md-2"><strong>Toplam İade:</strong> @((double)ViewBag.TotalRefund) ₺</div>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Rapor Seçim ve Gün Kontrolleri -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-8">
+                    @if (ViewData["AllReports"] is List<ProjectCafeEntities.DailyReport> reports)
+                    {
+                        <form method="get" action="/gunluk-islemler">
+                            <!-- Rapor Seçim Kartları -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <i class="fas fa-file-alt me-2"></i>Rapor Seç
+                                </div>
+                                <div class="card-body p-0">
+                                    <div class="report-list">
+                                        @if (ViewData["AllReports"] is List<ProjectCafeEntities.DailyReport> reports)
+                                        {
+                                            @foreach (var r in reports)
+                                            {
+                                                var isSelected = ViewData["SelectedReport"] != null &&
+                                                ((ProjectCafeEntities.DailyReport)ViewData["SelectedReport"]).Id == r.Id;
+                                                var isActive = r.EndTime == null;
+
+                                                <a href="/gunluk-islemler?rapor=@r.Id" class="report-item @(isSelected ? "selected" : "") @(isActive ? "active" : "")">
+                                                    <div class="report-date">
+                                                        @r.StartTime.ToString("dd.MM.yyyy HH:mm")
+                                                        @if (r.EndTime != null)
+                                                        {
+                                                            @:- @r.EndTime?.ToString("dd.MM.yyyy HH:mm")
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="badge bg-warning text-dark ms-2">
+                                                                <i class="fas fa-spinner fa-spin me-1"></i>Devam ediyor
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    <div class="report-duration">
+                                                        @if (r.EndTime != null)
+                                                        {
+                                                            var duration = r.EndTime - r.StartTime;
+                                                            @:Süre: @duration.Value.Hours saat @duration.Value.Minutes dakika
+                                                        }
+                                                    </div>
+                                                    <i class="fas fa-chevron-right"></i>
+                                                </a>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <div class="text-center p-3 text-muted">
+                                                <i class="fas fa-info-circle me-2"></i>Görüntülenecek rapor bulunamadı
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    }
                 </div>
-            }
-        }
-    </table>
+                <div class="col-md-4 text-end">
+                    @if (role == "Admin" || allowedPages.Contains("StartDay"))
+                    {
+                        <form method="post" asp-action="StartDay" style="display: inline-block;">
+                            <button class="btn btn-success"><i class="fas fa-play me-2"></i>Gün Başlat</button>
+                        </form>
+                    }
+                    @if (role == "Admin" || allowedPages.Contains("EndDay"))
+                    {
+                        <form asp-action="EndDay" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger"><i class="fas fa-stop me-2"></i>Gün Sonu Al</button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Özet Kartları -->
+    @if (ViewBag.TotalCard != null)
+    {
+        <div class="row mb-4">
+            <div class="col-xl-2 col-md-4 mb-4">
+                <div class="summary-card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1">Toplam Kazanç</p>
+                                <h3 class="mb-0">@(((double)ViewBag.TotalCardAndCash).ToString("N2")) ₺</h3>
+                            </div>
+                            <i class="fas fa-coins fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 mb-4">
+                <div class="summary-card bg-success text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1">Toplam Kart</p>
+                                <h3 class="mb-0">@(((double)ViewBag.TotalCard).ToString("N2")) ₺</h3>
+                            </div>
+                            <i class="fas fa-credit-card fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 mb-4">
+                <div class="summary-card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1">Toplam Nakit</p>
+                                <h3 class="mb-0">@(((double)ViewBag.TotalCash).ToString("N2")) ₺</h3>
+                            </div>
+                            <i class="fas fa-money-bill-wave fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 mb-4">
+                <div class="summary-card bg-warning text-dark">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1">Toplam İkram</p>
+                                <h3 class="mb-0">@(((double)ViewBag.TotalBonus).ToString("N2")) ₺</h3>
+                            </div>
+                            <i class="fas fa-gift fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-2 col-md-4 mb-4">
+                <div class="summary-card bg-danger text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <p class="mb-1">Toplam İade</p>
+                                <h3 class="mb-0">@(((double)ViewBag.TotalRefund).ToString("N2")) ₺</h3>
+                            </div>
+                            <i class="fas fa-exchange-alt fa-2x opacity-50"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- İşlem Tablosu -->
+    @if (role == "Admin" || allowedPages.Contains("DailyReportView"))
+    {
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="dailyReportTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th><i class="far fa-clock me-1"></i>Saat</th>
+                                <th><i class="fas fa-utensils me-1"></i>Masa</th>
+                                <th><i class="fas fa-lira-sign me-1"></i>Tutar</th>
+                                <th><i class="fas fa-money-check-alt me-1"></i>Ödeme Yöntemi</th>
+                                <th><i class="far fa-comment me-1"></i>Açıklama</th>
+                                <th><i class="fas fa-user me-1"></i>Kullanıcı</th>
+                                <th><i class="far fa-calendar me-1"></i>Tarih</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>@item.RegistrationDate.ToString("HH:mm")</td>
+                                    <td>
+                                        <span class="badge bg-primary fs-6">@item.TableName</span>
+                                    </td>
+                                    <td class="fw-bold">@item.TotalPrice.ToString("N2") ₺</td>
+                                    <td>
+                                        @if (item.PaymentMethod == "Kart")
+                                        {
+                                            <span class="badge bg-success fs-6">@item.PaymentMethod</span>
+                                        }
+                                        else if (item.PaymentMethod == "Nakit")
+                                        {
+                                            <span class="badge bg-info text-dark fs-6">@item.PaymentMethod</span>
+                                        }
+                                        else if (item.PaymentMethod == "İkram")
+                                        {
+                                            <span class="badge bg-warning text-dark fs-6">@item.PaymentMethod</span>
+                                        }
+                                        else if (item.PaymentMethod == "İade")
+                                        {
+                                            <span class="badge bg-danger fs-6">@item.PaymentMethod</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary fs-6">@item.PaymentMethod</span>
+                                        }
+                                    </td>
+                                    <td>@(string.IsNullOrEmpty(item.Comment) ? "-" : item.Comment)</td>
+                                    <td>@item.RegistrationUserFullName</td>
+                                    <td>@item.Date</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
 </div>
+
+@section Scripts {
+    <script>
+        // Tabloyu DataTable ile geliştirme
+        $(document).ready(function() {
+            $('#dailyReportTable').DataTable({
+                responsive: true,
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.11.5/i18n/tr.json'
+                },
+                dom: '<"top"f>rt<"bottom"lip><"clear">',
+                pageLength: 25
+            });
+        });
+    </script>
+}

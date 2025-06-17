@@ -19,63 +19,71 @@
     var allowedPages = !string.IsNullOrEmpty(permissionsJson) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(permissionsJson) : new List<string>();
 }
 
-@foreach (var category in allCategories)
-{
-    <div class="menu-divider">
-        <span>@category.CategoryName</span>
+<!-- Hero Section -->
+<div class="product-hero">
+    <div class="container py-5">
+        <h1 class="display-4 text-white">Ürün Yönetimi</h1>
+        <p class="lead text-white-50">Menünüzdeki ürünleri kolayca yönetin</p>
     </div>
+</div>
 
-    var subCategoriesInThisCategory = allSubCategories.Where(s => s.MenuCategoryId == category.Id).ToList();
-
-    foreach (var subCategory in subCategoriesInThisCategory)
+<div class="container">
+    @foreach (var category in allCategories)
     {
-        var subCategoryProducts = Model.Where(p => p.SubMenuCategoryId == subCategory.Id).ToList();
-
-        <div class="submenu-divider">
-            <span>@subCategory.SubCategoryName</span>
+        <div class="menu-divider">
+            <span>@category.CategoryName</span>
         </div>
 
-        <div class="row pt-4">
-            @if (subCategoryProducts.Any())
-            {
-                foreach (var product in subCategoryProducts)
+        var subCategoriesInThisCategory = allSubCategories.Where(s => s.MenuCategoryId == category.Id).ToList();
+
+        foreach (var subCategory in subCategoriesInThisCategory)
+        {
+            var subCategoryProducts = Model.Where(p => p.SubMenuCategoryId == subCategory.Id).ToList();
+
+            <div class="category-header">
+                <div class="category-title">
+                    <span>@subCategory.SubCategoryName</span>
+                </div>
+                <div class="category-divider"></div>
+            </div>
+
+            <div class="row">
+                @if (subCategoryProducts.Any())
                 {
-                    <div class="col-md-4 mb-4">
-                        <div class="blog-card">
-                            <a href="#">
-                                <img src="@product.Image" alt="@product.Name" class="img-fluid">
-                            </a>
-                            <div class="blog-content">
-                                <a href="#">
-                                    <h3 class="mb-4 mt-2">
-                                        @product.Name
-                                    </h3>
-                                </a>
-                                <div class="price-container">
+                    foreach (var product in subCategoryProducts)
+                    {
+                         <div class="col-lg-4 col-md-6 mb-4">
+                            <div class="product-card">
+                                <div class="product-badge">
                                     @if (product.IsThereDiscount)
                                     {
-                                        var discountRate = (product.Price * product.DiscountRate) / 100;
-                                        var lastPrice = (product.Price - discountRate);
-                                        <span class="original-price">@product.Price ₺</span>
-                                        <span class="discount-label">% @product.DiscountRate</span>
-                                        <span class="discount-price">@lastPrice ₺</span>
+                                        <span class="badge bg-danger">%@product.DiscountRate İNDİRİM</span>
                                     }
-                                    else
+                                    @if (product.StockCount > 0)
                                     {
-                                        <span class="discount-price">@product.Price ₺</span>
+                                        <span class="badge bg-success">STOKTA (@product.StockCount)</span>
                                     }
                                 </div>
-                                <div>
-                                    @if (product.StockCount != null)
-                                    {
-                                        <span class="discount-price">Stokta @product.StockCount tane var.</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="discount-price">Stok bilgisi girilmedi.</span>
-                                    }
+                                <div class="product-image">
+                                    <img src="@product.Image" alt="@product.Name" class="img-fluid">
                                 </div>
-                                <div class="d-flex justify-content-between gap-2 mt-3">
+                                <div class="product-body">
+                                    <h3 class="product-title">@product.Name</h3>
+                                    <div class="product-price">
+                                        @if (product.IsThereDiscount)
+                                        {
+                                            var discountRate = (product.Price * product.DiscountRate) / 100;
+                                            var lastPrice = (product.Price - discountRate);
+                                            <span class="original-price">@product.Price.ToString("N2") ₺</span>
+                                            <span class="discount-price">@lastPrice ₺</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="current-price">@product.Price.ToString("N2") ₺</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="product-actions">
                                     @if (role == "Admin" || allowedPages.Contains("UpdateProduct"))
                                     {
                                         <a href="#">
@@ -145,6 +153,7 @@
                                             </button>
                                         </a>
                                     }
+                                    
                                     @if (role == "Admin" || allowedPages.Contains("UpdateStockProduct"))
                                     {
                                         <label class="switch">
@@ -166,6 +175,7 @@
                                             </div>
                                         </label>
                                     }
+                                    
                                     @if (role == "Admin" || allowedPages.Contains("DeleteProduct"))
                                     {
                                         <a href="#">
@@ -182,18 +192,22 @@
                                 </div>
                             </div>
                         </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12">
+                        <div class="no-products">
+                            <i class="fas fa-pizza-slice"></i>
+                            <p>Bu kategoride henüz ürün bulunmamaktadır</p>
+                        </div>
                     </div>
                 }
-            }
-            else
-            {
-                <div class="col-12 mb-4 text-muted">Bu alt kategoride henüz ürün yok.</div>
-            }
-        </div>
+            </div>
 
-        @if (role == "Admin" || allowedPages.Contains("AddProduct"))
-        {
-            <div class="d-flex justify-content-end mb-4">
+            @if (role == "Admin" || allowedPages.Contains("AddProduct"))
+            {
+                <div class="d-flex justify-content-end mb-4">
                 <button class="addimg"
                 data-category="@category.CategoryName"
                 data-subcategory="@subCategory.SubCategoryName"
@@ -205,62 +219,106 @@
                     <span class="addimg__icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" viewBox="0 0 24 24" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" height="24" fill="none" class="svg"><line y2="19" y1="5" x2="12" x1="12"></line><line y2="12" y1="12" x2="19" x1="5"></line></svg></span>
                 </button>
             </div>
+
+            }
         }
     }
-}
+</div>
 
 @if (role == "Admin" || allowedPages.Contains("AddProduct") || allowedPages.Contains("UpdateProduct"))
 {
-    <!-- Modal Başlangıcı -->
     <div class="modal fade" id="productModal" tabindex="-1" aria-labelledby="productModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content rounded-4 shadow-lg">
-                <div class="modal-body">
-                    <h3 class="text-muted">Ürün Resmi:</h3>
-                    <label for="image-upload" class="upload-area">
-                        <span class="upload-icon">
-                            <svg xml:space="preserve" viewBox="0 0 184.69 184.69" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg" id="Capa_1" version="1.1" width="60px" height="60px">
-                                <g>
-                                    <path d="M149.968,50.186c-8.017-14.308-23.796-22.515-40.717-19.813C102.609,16.43,88.713,7.576,73.087,7.576c-22.117,0-40.112,17.994-40.112,40.115c0,0.913,0.036,1.854,0.118,2.834C14.004,54.875,0,72.11,0,91.959c0,23.456,19.082,42.535,42.538,42.535h33.623v-7.025H42.538c-19.583,0-35.509-15.929-35.509-35.509c0-17.526,13.084-32.621,30.442-35.105c0.931-0.132,1.768-0.633,2.326-1.392c0.555-0.755,0.795-1.704,0.644-2.63c-0.297-1.904-0.447-3.582-0.447-5.139c0-18.249,14.852-33.094,33.094-33.094c13.703,0,25.789,8.26,30.803,21.04c0.63,1.621,2.351,2.534,4.058,2.14c15.425-3.568,29.919,3.883,36.604,17.168c0.508,1.027,1.503,1.736,2.641,1.897c17.368,2.473,30.481,17.569,30.481,35.112c0,19.58-15.937,35.509-35.52,35.509H97.391v7.025h44.761c23.459,0,42.538-19.079,42.538-42.535C184.69,71.545,169.884,53.901,149.968,50.186z" style="fill:#010002;"></path>
-                                </g>
-                            </svg>
-                        </span>
-                        <p class="imgtext">Ürününüz için görülecek resmi seçiniz!</p>
-                        <img id="preview" alt="Ürün Resmi">
-                        <input class="input" type="file" id="image-upload" accept="image/*">
-                    </label>
-
-                    <h3 class="text-muted">Üst Menü:</h3>
-                    <input type="text" id="menuCategory" class="form-control" readonly>
-
-                    <h3 class="text-muted">Alt Menü:</h3>
-                    <input type="text" id="subMenuCategory" class="form-control" readonly>
-
-                    <h3 class="text-muted">Ürün İsmi:</h3>
-                    <input type="text" placeholder="Buraya ürün ismini yazın..." class="form-control" required>
-
-                    <h3 class="text-muted">Ürün Fiyatı:</h3>
-                    <input type="text" placeholder="Buraya ürün fiyatını yazın..." class="form-control" required>
-
-                    <h3 class="text-muted">Ürün Stok Sayısı: (İsteğe Bağlı)</h3>
-                    <input type="text" placeholder="Buraya ürün stok sayısını yazın..." class="form-control">
-
-                    <h3 class="text-muted">Üründe İndirim Var Mı:</h3>
-                    <div class="radio-group">
-                        <label>
-                            <input type="radio" name="discount" value="yes"> Evet
-                        </label>
-                        <label>
-                            <input type="radio" name="discount" value="no" checked> Hayır
-                        </label>
-                    </div>
-
-                    <h3 id="discount-label" class="discount-hidden text-muted">Üründe % Kaç İndirim Var:</h3>
-                    <input type="text" id="discount-amount" placeholder="İndirim oranını girin..." class="blog-title discount-hidden">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0">
+                <div class="modal-header bg-gradient-primary text-white">
+                    <h5 class="modal-title" id="productModalLabel">Ürün Yönetimi</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Kapat</button>
-                    <button type="button" class="btn btn-primary rounded-pill">Kaydet</button>
+                <div class="modal-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="image-upload-container mb-4">
+                                <label for="image-upload" class="upload-area">
+                                    <div class="upload-content">
+                                        <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                                        <h5>Resim Yükle</h5>
+                                        <p class="text-muted mb-1">Üründe görülecek resmi seçmek için tıklayın!</p>
+                                        <small class="text-muted">PNG, JPG (Max. 2MB)</small>
+                                    </div>
+                                    <img id="preview" class="preview-image" alt="Önizleme">
+                                    <input type="file" id="image-upload" class="d-none" accept="image/*">
+                                </label>
+                                <div class="image-requirements text-muted mt-2">
+                                    <small>Önerilen boyut: 800x400px</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-4">
+                                <label for="categoryName" class="form-label fw-bold">Üst Menü Adı*</label>
+                                <input type="text" id="menuCategory" class="form-control" readonly>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="subCategoryName" class="form-label fw-bold">Alt Menü Adı*</label>
+                                <input type="text" id="subMenuCategory" class="form-control" readonly>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="productName" class="form-label fw-bold">Ürün Adı*</label>
+                                <input type="text" class="form-control form-control-lg" id="productName"
+                                       placeholder="Örnek: Orta Boy Karışık Pizza" required>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="productPrice" class="form-label fw-bold">Ürün Fiyatı*</label>
+                                <input type="number" class="form-control form-control-lg" id="productPrice"
+                                       placeholder="Örnek: 100" required>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label for="productStockCount" class="form-label fw-bold">Ürün Stok Sayısı</label>
+                                <input type="number" class="form-control form-control-lg" id="productStockCount"
+                                       placeholder="Örnek: 50" required>
+                            </div>
+                            <div class="form-group mb-4">
+                                <label class="form-label fw-bold">İndirim Uygula</label>
+                                <div class="checkbox-wrapper">
+                                    <input type="radio" name="discount" value="yes" class="check" id="check1-61">
+                                    <label for="check1-61" class="label">
+                                        <svg width="45" height="45" viewBox="0 0 95 95">
+                                            <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                            <g transform="translate(0,-952.36222)">
+                                            <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                            </g>
+                                        </svg>
+                                        <span>Evet</span>
+                                    </label>
+
+                                    <input type="radio" name="discount" value="no" class="check" id="check1-62" checked>
+                                    <label for="check1-62" class="label">
+                                        <svg width="45" height="45" viewBox="0 0 95 95">
+                                            <rect x="30" y="20" width="50" height="50" stroke="black" fill="none"></rect>
+                                            <g transform="translate(0,-952.36222)">
+                                            <path d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" stroke="black" stroke-width="3" fill="none" class="path1"></path>
+                                            </g>
+                                        </svg>
+                                        <span>Hayır</span>
+                                    </label>
+                                </div>
+
+                                <div id="discountContainer" class="discount-hidden">
+                                    <label class="form-label fw-bold">İndirim Oranı (%)*</label>
+                                    <input type="number" id="discount-amount" class="form-control form-control-lg" 
+                                           placeholder="Örnek: 10">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Vazgeç
+                    </button>
+                    <button type="button" class="btn btn-primary rounded-pill px-4" id="saveProductBtn">
+                        <i class="fas fa-save me-2"></i>Kaydet
+                    </button>
                 </div>
             </div>
         </div>
@@ -289,9 +347,9 @@
             modal.setAttribute('data-mode', isEdit ? 'edit' : 'create');
 
             if (isEdit) {
-                document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value = this.getAttribute('data-name');
-                document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value = this.getAttribute('data-price');
-                document.querySelector('input[placeholder="Buraya ürün stok sayısını yazın..."]').value = this.getAttribute('data-stock-count');
+                document.querySelector('input[placeholder="Örnek: Orta Boy Karışık Pizza"]').value = this.getAttribute('data-name');
+                document.querySelector('input[placeholder="Örnek: 100"]').value = this.getAttribute('data-price');
+                document.querySelector('input[placeholder="Örnek: 50"]').value = this.getAttribute('data-stock-count');
                 const image = this.getAttribute('data-image');
                 if (image) document.getElementById('preview').src = image;
 
@@ -300,25 +358,22 @@
 
                 if (hasDiscount) {
                     document.querySelector('input[name="discount"][value="yes"]').checked = true;
-                    document.getElementById('discount-label').classList.remove("discount-hidden");
-                    document.getElementById('discount-amount').classList.remove("discount-hidden");
+                    document.getElementById('discountContainer').classList.remove('discount-hidden');
                     document.getElementById('discount-amount').value = discount;
                 } else {
                     document.querySelector('input[name="discount"][value="no"]').checked = true;
-                    document.getElementById('discount-label').classList.add("discount-hidden");
-                    document.getElementById('discount-amount').classList.add("discount-hidden");
+                    document.getElementById('discountContainer').classList.add('discount-hidden');
                     document.getElementById('discount-amount').value = "";
                 }
 
                 modal.setAttribute('data-id', this.getAttribute('data-id'));
             } else {
-                document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value = "";
-                document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value = "";
-                document.querySelector('input[placeholder="Buraya ürün stok sayısını yazın..."]').value = "";
+                document.querySelector('input[placeholder="Örnek: Orta Boy Karışık Pizza"]').value = "";
+                document.querySelector('input[placeholder="Örnek: 100"]').value = "";
+                document.querySelector('input[placeholder="Örnek: 50"]').value = "";
                 document.getElementById('preview').src = "";
                 document.querySelector('input[name="discount"][value="no"]').checked = true;
-                document.getElementById('discount-label').classList.add("discount-hidden");
-                document.getElementById('discount-amount').classList.add("discount-hidden");
+                document.getElementById('discountContainer').classList.add('discount-hidden');
                 document.getElementById('discount-amount').value = "";
                 modal.removeAttribute('data-id');
             }
@@ -331,9 +386,9 @@
         const mode = modal.getAttribute('data-mode');
         const id = modal.getAttribute('data-id');
 
-        const name = document.querySelector('input[placeholder="Buraya ürün ismini yazın..."]').value;
-        const price = document.querySelector('input[placeholder="Buraya ürün fiyatını yazın..."]').value;
-        const stockCount = document.querySelector('input[placeholder="Buraya ürün stok sayısını yazın..."]').value;
+        const name = document.querySelector('input[placeholder="Örnek: Orta Boy Karışık Pizza"]').value;
+        const price = document.querySelector('input[placeholder="Örnek: 100"]').value;
+        const stockCount = document.querySelector('input[placeholder="Örnek: 50"]').value;
         const hasDiscount = document.querySelector('input[name="discount"]:checked').value === 'yes';
         const discount = hasDiscount ? document.getElementById('discount-amount').value : 0;
         const imageSrc = document.getElementById('preview').src;
